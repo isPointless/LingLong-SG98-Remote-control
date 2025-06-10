@@ -1,10 +1,17 @@
 #include "definitions.h"
 #include "io.h"
 #include "main.h"
-#include "motorcontrol.h"
 #include <math.h>
 #include <JC_Button.h>
 #include <ESP32Encoder.h>
+
+#ifdef JMC_DRIVE
+#include "motorcontrol_jmc.h"
+#endif
+
+#ifdef RT_DRIVE
+#include "motorcontrol_rt.h"
+#endif
 
 
 Button enc_button(ENC_BTN);
@@ -29,6 +36,7 @@ void io_init() {
 }
 
 void do_io() { 
+    static bool lastIdle = false; //lastIdle true means it was on normal Idle before, false means idle_GBW
     if(state == IDLE) { 
         setRPM =+ encoder_change()*rpm_scalar;
         
@@ -36,6 +44,7 @@ void do_io() {
         if(ENC_BUTTON() == true) { 
             if(longPress == false) { 
                 state = MENU1;
+                lastIdle = true;
             } else longPress = false;
         }
         if(pressedLong() == true) { 
@@ -54,6 +63,7 @@ void do_io() {
         if(ENC_BUTTON() == true) { 
             if(longPress == false) { 
                 state = MENU1;
+                lastIdle = false;
             } else longPress = false;
         }
         //longpress switches to IDLE <--> IDLE_GBW
@@ -110,19 +120,81 @@ void do_io() {
     }
 
     if(state == MENU1) { 
-        menu1Selected =+ encoder_change();
-        if(menu1Selected > 6) menu1Selected = 0;
-        if(menu1Selected < 0) menu1Selected = 6;
+        if(enterMenu == false) menu1Selected =+ encoder_change();
+        if(enterMenu == true) { 
+            menu1Value[menu1Selected] =+ encoder_change();
+        }
+
+        if(menu1Selected > MENU1MAX) menu1Selected = 0;
+        if(menu1Selected < 0) menu1Selected = MENU1MAX;
+
+        if(START_BUTTON() == true) { 
+            // do.. nothing? or exit?
+        }
+
+
+        if(ENC_BUTTON() == true && enterMenu == false) { 
+            if(menu1Selected == PURGESETTINGS) state = MENU2;
+            if(menu1Selected == GBWSETTINGS) state = MENU3;
+            if(menu1Selected == EXITMENU) state = lastIdle; 
+            if(menu1Selected != PURGESETTINGS && menu1Selected != GBWSETTINGS && menu1Selected != EXITMENU) enterMenu = true; //entering settings adjustment
+            
+        }
+        // exit settings adjustment
+        if(ENC_BUTTON() == true && enterMenu == true) { 
+            enterMenu = false;
+            //pdata_write(); we gotta save this new setting
+        }
+    }
+
+    if(state == MENU2) { 
+        if(enterMenu == false) menu2Selected =+ encoder_change();
+        if(enterMenu == true) { 
+            menu2Value[menu2Selected] =+ encoder_change();
+        }
+
+        if(menu2Selected > MENU2MAX) menu2Selected = 0;
+        if(menu2Selected < 0) menu2Selected = MENU2MAX;
 
         if(START_BUTTON() == true) { 
             // do.. nothing?
         }
-        if(enterMenu == true) 
 
-        if(ENC_BUTTON() == true) { 
-            if(menu1Selected == 2) { 
-                state = MENU2;
-            } 
+
+        if(ENC_BUTTON() == true && enterMenu == false) { 
+            if(menu2Selected == RETURN_FROM_PURGE) state = MENU1;
+            if(menu2Selected != RETURN_FROM_PURGE) enterMenu = true;
+        }
+
+        // exit settings adjustment
+        if(ENC_BUTTON() == true && enterMenu == true) { 
+            enterMenu = false;
+            //pdata_write(); we gotta save this new setting
+        }
+    }
+
+    if(state == MENU3) { 
+        if(enterMenu == false) menu3Selected =+ encoder_change();
+        if(enterMenu == true) { 
+            menu3Value[menu3Selected] =+ encoder_change();
+        }
+
+        if(menu1Selected > MENU3MAX) menu1Selected = 0;
+        if(menu1Selected < 0) menu1Selected = MENU3MAX;
+
+        if(START_BUTTON() == true) { 
+            // do.. nothing?
+        }
+
+        if(ENC_BUTTON() == true && enterMenu == false) { 
+            if(menu3Selected == RETURN_FROM_GBW) state = MENU1;
+            if(menu3Selected != RETURN_FROM_GBW) enterMenu = true;
+        }
+
+        // exit settings adjustment
+        if(ENC_BUTTON() == true && enterMenu == true) { 
+            enterMenu = false;
+            //pdata_write(); we gotta save this new setting
         }
     }
 

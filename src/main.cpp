@@ -2,22 +2,34 @@
 #include "main.h"
 #include "gbw.h"
 #include "pdata.h"
-#include "comm.h"
 #include "display.h"
 #include "io.h"
-#include "motorcontrol.h"
+
+#ifdef RT_DRIVE 
+#include "comm_rt.h"
+#include "motorcontrol_rt.h"
+#endif 
+#ifdef JMC_DRIVE
+#include "comm_jmc.h"
+#include "motorcontrol_jmc.h"
+#endif
 
 uint8_t state = IDLE;
 uint8_t commStatus = DISCONNECTED;
-int8_t menu1Selected = EXIT;
-int8_t menu2Selected = SETBUTTONPURGE;
+int8_t menu1Selected = EXITMENU;
+int8_t menu2Selected = RETURN_FROM_PURGE;
+int8_t menu3Selected = RETURN_FROM_GBW;
 bool enterMenu = false;
+int16_t menu1Value[] = {0};
+int16_t menu2Value[] = {0};
+int16_t menu3Value[] = {0};
 bool newData = true;
 bool purge_enabled = true;
 uint8_t error = 0;
 uint16_t sleepTime = default_sleeptime;
 int16_t setRPM = default_setRPM;
 uint16_t setWeight = default_weight;
+bool grindingComplete = false;
 
 unsigned long lastActivity = 0;
 
@@ -31,6 +43,11 @@ void setup() {
     #ifdef DEBUG
         Serial.begin(115200);
     #endif
+    
+    if(rtc_bootFlag1 == 1) { 
+        sleep_release();
+       // display_wakey(); 
+    }
     comm_init();
     motor_init();
     vitals_init();
@@ -38,20 +55,17 @@ void setup() {
     pdata_init();
     display_init();
     pdata_read();
-    if(rtc_bootFlag1 == 1) { 
-        sleep_release();
-       // display_wakey(); 
-    }
+ 
     lastActivity = millis();
 }
 
 void loop() { 
     static unsigned long lastUpdate = 0;
 
-    doVitals(); 
+    doVitals();
+    do_comm();
     update_display();
     check_io();
-    do_comm();
 
     if(state == SLEEPING){ 
         ledAction(0);
@@ -62,6 +76,11 @@ void loop() {
     
     if(state == IDLE)
     { 
+        ledAction(2);
+        motor_setRPM = 0;
+    }
+
+    if(state == IDLE_GBW) { 
         ledAction(2);
         motor_setRPM = 0;
     }
@@ -77,7 +96,38 @@ void loop() {
 
     if(state == GRINDING_GBW)
     { 
-        gbwVitals();
+        gbwVitals(); 
+        // Completion route
+        if(gbw_predict() < COMMINTERVAL && grindingComplete == false) { 
+            motorOff();
+            grindingComplete = true;
+            lastUpdate = millis();
+        }
+
+        // Disconnected route
+        if(scale_connected() == false && grindingComplete == false) { 
+            motorOff();
+            state = IDLE_GBW;
+            error = 104;
+        // Still working on it route
+        } 
+        
+        if(scale_connected() == true && grindingComplete == false) { 
+            motor_setRPM = GBW_RPM_SET;
+            ledAction(2);
+        }
+
+        // Aftermath route
+        if(grindingComplete == true && lastUpdate + 500 > millis()) { 
+            gbw_learn();
+            ledAction(4);
+        }
+
+        // exit route
+        if(grindingComplete == true && lastUpdate + 500 < millis()) { 
+            state = IDLE_GBW;
+            grindingComplete = false;
+        }
     }
 
     if(state == MENU1)
@@ -95,6 +145,7 @@ void loop() {
         Calibrate();
         }
     }
+
     newData = false; // all parts of the loop have received the data
 }
 
@@ -104,7 +155,8 @@ void checkPurge() {
 }
 
 void vitals_init() { 
-  // get pdata
+  // watchdog??
+  //pdata?
 }
 
 
@@ -129,7 +181,12 @@ void sleep_init() {
 void sleep_release() { 
     rtc_gpio_hold_dis(WAKE_BTN);
     rtc_gpio_hold_dis(WAKE_ENC_BTN);
+    rtc_gpio_hold_dis(WAKE_ENC_A);
+    rtc_gpio_hold_dis(WAKE_ENC_B);
+    rtc_gpio_hold_dis(SLEEP_RE);
+    rtc_gpio_hold_dis(SLEEP_DE);
 }
+
 
 void doVitals() { 
     //watchdog?

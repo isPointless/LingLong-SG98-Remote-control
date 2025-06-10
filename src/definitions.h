@@ -8,10 +8,10 @@
 #define rpm_scalar 25
 #define SIZEOFCALIBRATEARRAY 232 
 #define LONGPRESS 500
+//#define RT_DRIVE
+#define JMC_DRIVE
 
 // COMM SETTINGS
-#define BAUD_RATE 115200 //default for RT
-#define PARITY SERIAL_8N1 //default for RT
 #define RXD 18 
 #define TXD 17
 #define COMMINTERVAL 100

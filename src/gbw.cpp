@@ -1,12 +1,20 @@
 #include "gbw.h"
 #include <AcaiaArduinoBLE.h>
 #include "main.h"
-#include "motorcontrol.h"
+
+#ifdef JMC_DRIVE
+#include "motorcontrol_jmc.h"
+#endif
+
+#ifdef RT_DRIVE
+#incldue "motorcontrol_rt.h"
+#endif
 
 AcaiaArduinoBLE scale(DEBUG);
 
-uint16_t goalWeight = 180;
+uint16_t goalWeight = 1800; //weight in g * 100
 bool scaleConnected = false;
+float speedModifier;
 
 BLEService weightService("0x0FFE"); // create service
 BLEByteCharacteristic weightCharacteristic("0xFF11",  BLEWrite | BLERead);
@@ -27,12 +35,14 @@ void scales_init() {
   #endif
 }
 
-bool scales_connect() { 
-    return true;
+bool scale_connected() { 
+    if(scaleConnected == true)  return true; 
+    else return false;
 }
 
 void gbwVitals() 
 {   
+    BLE.poll();
     // Send a heartbeat message to the scale periodically to maintain connection
     if(scale.heartbeatRequired())
     {
@@ -48,18 +58,27 @@ void gbwVitals()
 
     if(scale.isConnected() == true) scaleConnected = true; else scaleConnected = false;
 
-    if(scale.isConnected() == false && state == GRINDING_GBW) { 
-        state = IDLE_GBW;
-        motorOff();
-        error = 104;
-        #ifdef DEBUG
-        Serial.println("Scale disconnected while grinding by weight");
-        #endif
-    }
-
     #ifdef DEBUG
         Serial.print(currentWeight);
     #endif
-
 }
 
+uint16_t gbw_predict() {  //returned value is the predicted time in ms till the motor has to stop
+    static float predictedTime;
+    static float stillToGrind;
+    if(state == IDLE_GBW) { 
+        predictedTime = goalWeight / ((float)setRPM/1000) + 100; //just some BS to return something which COULD be it. untested 
+    }
+
+    if(state == GRINDING_GBW) { 
+        stillToGrind = ((float)goalWeight/100 - currentWeight); 
+        predictedTime = stillToGrind / (speedModifier*GBW_RPM_SET); 
+    }
+
+    return predictedTime;
+}
+
+
+void gbw_learn() { 
+
+}

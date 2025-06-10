@@ -1,7 +1,14 @@
 #include "pdata.h"
 #include "gbw.h"
-#include "motorcontrol.h"
 #include "main.h"
+
+#ifdef JMC_DRIVE
+#include "motorcontrol_jmc.h"
+#endif
+
+#ifdef RT_DRIVE
+#include "motorcontrol_rt.h"
+#endif
 
 Preferences preferences; 
 
@@ -41,7 +48,7 @@ void pdata_read() {
 }
 
 
-void pdata_write(uint8_t what, uint8_t specific) { // 0 = settings, 1 = calibrationarray, 2 = specific setting, only functional with 3, specific
+void pdata_write(uint8_t what, uint16_t specific) { // 0 = settings, 1 = calibrationarray, 2 = specific setting, only functional with 3, specific
     preferences.begin("settings", false); 
 
     if(what == 0) { //write settingsArray *why would we use this*
