@@ -172,7 +172,7 @@ bool Calibrate() {
     if(checkTime + CAL_TIME < millis() && currentCal == sizeof(calibrateArray)/sizeof(uint16_t)) { //we have completed the last Calibration
         calibrateArray[currentCal] = uint16_t(sum/sumCount);
         motor_setRPM = 0;
-        pdata_write(1,0);
+        pdata_write(1);
         motorOff();
         return true;
     }

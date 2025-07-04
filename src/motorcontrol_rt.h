@@ -8,6 +8,7 @@ extern int16_t motor_currentRPM;
 extern uint16_t motor_currentTorque;
 extern uint16_t motor_currentStatus;
 extern int16_t calibrateArray[];
+extern uint16_t currentCal;
 
 
 void motor_init(); //initialize / verify motor parameters 

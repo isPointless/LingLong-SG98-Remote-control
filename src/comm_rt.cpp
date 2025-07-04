@@ -23,13 +23,13 @@ void comm_init() {
 
 bool writeConfirm(uint16_t reg_addr, uint16_t value) { 
   while(!writeSingleRegister(reg_addr, value))
-  delay(COMM_DELAY);
+  delay(COMM_DELAY_RECEIVE);
   return receive();
 }
 
 uint16_t readReturn(uint16_t reg_addr, uint16_t reg_count) { //returns -1 if unsuccesfull, otherwise returns read value of first reg_addr
   while(!readRegister(reg_addr, reg_count)) 
-  delay(COMM_DELAY);
+  delay(COMM_DELAY_RECEIVE);
   if(receive() == true) { 
     return lastRead[0];
   } else return -1;
@@ -46,7 +46,7 @@ void rs485_send(uint8_t* data, size_t length) {
 }
 
 bool writeSingleRegister(uint16_t reg_addr, uint16_t value) {
-  if(lastSend + COMMINTERVAL > millis()) { return false; }
+  if(lastSend + COMM_DELAY_SEND > millis()) { return false; }
   request[0] = SLAVE_ID;
   request[1] = FUNC_WRITE_SINGLE_REGISTER;
   request[2] = reg_addr >> 8;
@@ -83,7 +83,7 @@ bool receiveError(uint8_t msgLength) {
 bool receive() { 
   uint8_t len; 
 
-  if(lastSend + COMM_DELAY > millis()) return false; //exit if not expecting a complete message yet, simpler than checking serial.available();
+  if(lastSend + COMM_DELAY_RECEIVE > millis()) return false; //exit if not expecting a complete message yet, simpler than checking serial.available();
   
   // Last comm request was a writeSingleReg
   if(lastRequestType == 0) { 
@@ -151,7 +151,7 @@ bool receive() {
     }
 
     // SAVE DATA FROM RESPONSE
-    lastRead[8] = {0};
+    memset(lastRead, 0, sizeof(lastRead));
     uint8_t byteCount = response[2];
     #ifdef DEBUG
       Serial.print("Registers read: ");
@@ -173,7 +173,7 @@ bool receive() {
 }
 
 bool readRegister(uint16_t reg_addr, uint16_t reg_count) { //Returns the value of the first register, next registers can be obtained with lastRead[1] and up.
-  if(lastSend + COMMINTERVAL > millis()) { return false; }
+  if(lastSend + COMM_DELAY_SEND > millis()) { return false; }
   request[0] = SLAVE_ID;
   request[1] = FUNC_READ_HOLDING_REGISTERS;
   request[2] = reg_addr >> 8;

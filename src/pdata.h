@@ -5,7 +5,7 @@
 
 #include <Preferences.h>
 void pdata_init();
-void pdata_write(uint8_t what, uint16_t specific);
+void pdata_write(uint8_t what);
 void pdata_read();
 
 #endif

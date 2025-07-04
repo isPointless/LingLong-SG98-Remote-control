@@ -16,6 +16,7 @@ int16_t motor_currentRPM = 0;
 uint16_t motor_currentTorque = 0;
 uint16_t motor_currentStatus = 0;
 int16_t motor_setRPM = 0;
+uint16_t currentCal = 0;
 RTC_DATA_ATTR uint8_t rtc_bootFlagMotor = 0;
 
 int16_t calibrateArray[((absolute_max_rpm-absolute_min_rpm)/rpm_scalar)] = {0};
@@ -49,13 +50,13 @@ void motor_init() {
 
   delay(50);
   writeConfirm(0x04B8, 1); // reset faults
-  writeConfirm(0x0193, 0); //0 speed given
+  writeConfirm(0x0193, 0); // 0 speed given
   writeConfirm(0x0064, 1); // set speed control mode
   writeConfirm(0x006C, 0); // fault mode 2 behaviour: coast to stop, de energize
   writeConfirm(0x006D, 0); // fault mode 1 behaviour: coast to stop, de energize
   writeConfirm(0x0190, 0); // Command source A = digital speed given
   writeConfirm(0x0192, 0); // command source A = actual
-  writeConfirm(0x0195, 200);// acc time constant 200ms (0-1000 rpm)
+  writeConfirm(0x0195, 200); // acc time constant 200ms (0-1000 rpm)
   writeConfirm(0x0196, 200); // Deceleration time constant 200ms (1000>0 rpm)
   writeConfirm(0x019C, 3000); // max speed 3000
   //writeSingleRegister(0x0817, 0); // disable virtual IN?
@@ -99,12 +100,11 @@ bool do_comm() { // can be called continously and will update all values
   }
 
   //prioritize a set command over cyclic read
-  
-  if(lastCommSend + (motor_lastSetRPM != motor_setRPM? COMM_DELAY : COMMINTERVAL) > millis()) return false;
+  if(lastCommSend + (motor_lastSetRPM != motor_setRPM? COMM_DELAY_SEND : COMMINTERVAL) > millis()) return false;
 
   //Send new RPM if 
   if(nextCommType == 0 || motor_lastSetRPM != motor_setRPM) { 
-    writeSingleRegister(0x0193, setRPM); //register 403
+    writeSingleRegister(0x0193, setRPM); //register #403, the forbidden lies behind...
     motor_lastSetRPM = motor_setRPM;
     lastCommType = 0;
     lastCommSend = millis();
@@ -127,17 +127,17 @@ bool do_comm() { // can be called continously and will update all values
   return true;
 }
 
-bool motorOff() { //High priority turn off, pauses everything else for this comm
+bool motorOff() {
     motor_setRPM = 0;
-    if(writeConfirm(0x0193, motor_setRPM) == true) { 
-        return true;
-    } else return motorOff(); //recursive... will stop at nothing
+    for (int i = 0; i < 10; ++i) {
+        if (writeConfirm(0x0193, motor_setRPM)) return true;
+    }
+    return false;
 }
 
 //This function needs to be called continuously untill it returns true; which indicates a completed calibration
 bool Calibrate() { 
     static unsigned long checkTime;
-    static uint16_t currentCal = 0; //calibration points 0 to x
     static uint32_t sum = 0;
     static uint8_t sumCount = 0;
 
@@ -170,7 +170,7 @@ bool Calibrate() {
     if(checkTime + CAL_TIME < millis() && currentCal == sizeof(calibrateArray)/sizeof(uint16_t)) { //we have completed the last Calibration
         calibrateArray[currentCal] = uint16_t(sum/sumCount);
         motor_setRPM = 0;
-        pdata_write(1,0);
+        pdata_write(1);
         motorOff();
         return true;
     }

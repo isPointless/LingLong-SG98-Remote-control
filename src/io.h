@@ -13,7 +13,9 @@ void do_io();
 
 bool START_BUTTON();
 bool ENC_BUTTON();
-
 bool pressedLong();
+
+extern int16_t storedSetRPM;
+extern uint32_t storedSetWeight;
 
 #endif
