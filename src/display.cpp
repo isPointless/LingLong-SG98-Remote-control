@@ -40,6 +40,8 @@ Adafruit_ST7789 *tft = NULL;
 #define SCREEN_MENU         4
 
 int initializedScreenId = -1;
+bool dimmed = false;
+bool disp_updateRequired = true;
 
 
 void display_init() { 
@@ -57,6 +59,7 @@ void display_init() {
   ledcSetup(1,4000,8);
   ledcAttachPin(DISP_BL, 1);
   ledcWrite(1, 0);
+  update_display();
 }
 
 void setBrightness() { 
@@ -64,14 +67,15 @@ void setBrightness() {
   uint8_t newBrightness;
   uint16_t dimTime;
 
-  if(Menu1[7].value < 120) dimTime = 60;
-  else dimTime = Menu1[7].value / 2;
+  if(Menu1[SETSLEEP].value < 10) dimTime = 5;
+  else dimTime = Menu1[SETSLEEP].value / 2;
 
-  if(lastActivity + dimTime * 1000 < millis()) { 
-    if(Menu1[7].value == 0) newBrightness = 0;
-    else newBrightness = 1;
+  if(lastActivity + dimTime * 60000 < millis()) { 
+    newBrightness = 1;
+    dimmed = true;
   } else {
-      newBrightness = Menu1[1].value;
+      newBrightness = Menu1[DISP_BRIGHTNESS].value;
+      dimmed = false;
   }
 
   if(lastBrightness != newBrightness) { 
@@ -81,6 +85,15 @@ void setBrightness() {
 }
 
 void update_display() { 
+  static unsigned long lastUpdate;
+  if(newData == true) disp_updateRequired = true;
+
+  if(disp_updateRequired != true) return; //This is mostly functional for testing.
+  if(lastUpdate + 1000/50 > millis()) return;
+
+  lastUpdate = millis();
+  disp_updateRequired = false;
+
   setBrightness();
 
     if(state == IDLE) { 
@@ -204,7 +217,7 @@ void drawIdleScreen() {
     tft->print("Drive");
     
     const char * purgeStatus;
-    if(Menu2[9].value == true) { 
+    if(Menu2[AUTO_PURGE_ENABLED].value == true) { 
       purgeStatus = "Enabled";
     } else purgeStatus = "Disabled";
 
@@ -363,12 +376,29 @@ void drawGbWIdleScreen() {
     tft->print(newScaleText);
 
     prevScaleStatus = scaleStatus;
+
+    // Update weight too. 
+    char newVal[10];
+    sprintf(newVal, "%.1f g", (currentWeight / 1000.0));
+
+    tft->setFont(&FreeSans12pt7b);
+    tft->getTextBounds("-888.8 g", 0, 0, &x1, &y1, &w, &h);
+    int valX = SCREEN_WIDTH/2 + 40;
+    int valY = SCREEN_HEIGHT*0.7 - 12;
+
+    tft->fillRect(valX - 4, valY - h, w + 10, h + 12, ST77XX_BLACK);
+
+    tft->setTextColor(getScaleStatusColor(scaleStatus));
+    tft->setCursor(valX, valY);
+    tft->print(newVal);
+
+    prevCurrentWeight = currentWeight;
   }
 }
 
 void drawGrindingOrPurgingScreen() {
     static int16_t prevRPM = -32768;
-    static uint16_t prevTorque = 0xFFFF;
+    static int16_t prevTorque = 0xFFFF;
     static SYSTEM_STATUS prevCommStatus = INVALID_STATUS;
     static bool prevPurgeEnabled = false;
     static bool prevPurgeReady = false;
@@ -393,7 +423,7 @@ void drawGrindingOrPurgingScreen() {
         prevRPM = -32768;
         prevTorque = 0xFFFF;
         prevCommStatus = INVALID_STATUS;
-        prevPurgeEnabled = !Menu2[9].value;
+        prevPurgeEnabled = !Menu2[AUTO_PURGE_ENABLED].value;
         prevPurgeReady = !ready_purge;
 
         tft->setFont(&FreeSans9pt7b);
@@ -408,14 +438,14 @@ void drawGrindingOrPurgingScreen() {
     }
 
     // --- RPM digits (left side) ---
-    if (prevRPM != motor_setRPM) {
+    if (prevRPM != motor_currentRPM) {
       char newVal[10];
-      sprintf(newVal, "%d", motor_setRPM);
+      sprintf(newVal, "%d", motor_currentRPM);
 
       tft->setFont(&FreeSans24pt7b);
       int16_t x1, y1;
       uint16_t w, h;
-      tft->getTextBounds("8888", 0, 0, &x1, &y1, &w, &h); // Max 4 digits
+      tft->getTextBounds("-8888", 0, 0, &x1, &y1, &w, &h); // Max 4 digits
       int valX = 10;
       int valY = SCREEN_HEIGHT / 2 - 10;
 
@@ -431,7 +461,7 @@ void drawGrindingOrPurgingScreen() {
 
     // --- Torque speedometer (right side) ---
    
-    uint8_t torquePercent = (motor_currentTorque > 1000) ? 100 : (motor_currentTorque * 100) / 1000;
+    int8_t torquePercent = (100 * motor_currentTorque / Menu1[SETMOTORTORQUE].value);
     //uint8_t torquePercent = 60;
     if (prevTorque != motor_currentTorque) {
         tft->fillCircle(speedoCX, speedoCY, speedoR + 2, ST77XX_BLACK);
@@ -521,7 +551,7 @@ void drawGrindingOrPurgingScreen() {
 
     } else {
         // Show regular purge status
-        if (prevPurgeEnabled != Menu2[9].value || prevPurgeReady != ready_purge || initializedScreenId != SCREEN_GRINDING) {
+        if (prevPurgeEnabled != Menu2[AUTO_PURGE_ENABLED].value || prevPurgeReady != ready_purge || initializedScreenId != SCREEN_GRINDING) {
             tft->setFont(&FreeSans9pt7b);
 
             
@@ -531,9 +561,9 @@ void drawGrindingOrPurgingScreen() {
             int statusX = SCREEN_WIDTH - 10 - w;
             tft->fillRect(statusX - 4, statusY - h, w + 2, h + 8, ST77XX_BLACK);
 
-            tft->setTextColor(Menu2[9].value ? (ready_purge ? COLOR_GREEN : COLOR_YELLOW) : ST77XX_WHITE);
+            tft->setTextColor(Menu2[AUTO_PURGE_ENABLED].value ? (ready_purge ? COLOR_GREEN : COLOR_YELLOW) : ST77XX_WHITE);
 
-            if (Menu2[9].value == true) { 
+            if (Menu2[AUTO_PURGE_ENABLED].value == true) { 
               if (ready_purge == true) newPurgeText = "Imminent!";
               else newPurgeText = "Detecting..";
             } else newPurgeText = "Disabled";
@@ -546,7 +576,7 @@ void drawGrindingOrPurgingScreen() {
             tft->setCursor(statusX, statusY);
             tft->print(newPurgeText);
 
-            prevPurgeEnabled = Menu2[9].value;
+            prevPurgeEnabled = Menu2[AUTO_PURGE_ENABLED].value;
             prevPurgeReady = ready_purge;
             prevPurgingDrawn = false;
         }
@@ -692,7 +722,7 @@ void drawGrindingGbwScreen() {
 
 void drawCalibratingScreen() {
     static int16_t prevRPM = -32768;
-    static uint16_t prevTorque = 0xFFFF;
+    static int16_t prevTorque = 0xFFFF;
     static SYSTEM_STATUS prevCommStatus = INVALID_STATUS;
     static int prevStep = -1;
     static int prevTotal = -1;
@@ -701,6 +731,10 @@ void drawCalibratingScreen() {
     const int dividerY = SCREEN_HEIGHT * 0.7;
     const int dividerW = SCREEN_WIDTH * 0.8;
     const int dividerX = (SCREEN_WIDTH - dividerW) / 2;
+    const int speedoCX = SCREEN_WIDTH - SCREEN_WIDTH / 4;
+    const int speedoCY = dividerY / 2 + 10;
+    const int speedoR = 60;
+
 
     // Use global variables directly, do NOT redeclare or define them here!
     // calibrateArray and currentCal are declared extern in motorcontrol_rt.h
@@ -733,7 +767,7 @@ void drawCalibratingScreen() {
         prevTotal = -1;
     }
 
-   // --- RPM digits (left side) ---
+    // --- RPM digits (left side) ---
     if (prevRPM != motor_currentRPM) {
       char newVal[10];
       sprintf(newVal, "%d", motor_currentRPM);
@@ -745,38 +779,39 @@ void drawCalibratingScreen() {
       int valX = 10;
       int valY = SCREEN_HEIGHT / 2 - 10;
 
-      tft->fillRect(valX - 2, valY - h, w + 4, h + 8, ST77XX_BLACK);
+      tft->fillRect(valX - 2, valY - h, w + 10, h + 8, ST77XX_BLACK);
 
       tft->setTextColor(ST77XX_WHITE);
-      tft->getTextBounds(newVal, 0, 0, &x1, &y1, &w, &h); // Max 4 digits
-      tft->setCursor(30 + w/2, SCREEN_HEIGHT / 2 - 10);
+      tft->setCursor(valX, valY);
       tft->print(newVal);
 
       prevRPM = motor_currentRPM;
     }
 
-    // --- Torque (right) ---
+    // --- Torque speedometer (right side) ---
+    int16_t torquePercent = motor_currentTorque;
+    //uint8_t torquePercent = 60;
     if (prevTorque != motor_currentTorque) {
-        tft->setFont(&FreeSans24pt7b);
-        
-        char oldTorqueStr[8];
-        char torqueStr[8];
+
         int16_t x1, y1;
         uint16_t w, h;
+        tft->getTextBounds("8888", 0, 0, &x1, &y1, &w, &h); // Max 4 digits
+        int valX = speedoCX - w / 2;
+        int valY = speedoCY+ h/2;
+        tft->fillRect(valX - 2, valY - h, w + 10, h + 8, ST77XX_BLACK);
 
-        tft->setTextColor(ST77XX_BLACK);
-        sprintf(oldTorqueStr, "%d", prevTorque);
-        tft->setCursor(SCREEN_WIDTH - 40 - w/2, SCREEN_HEIGHT / 2 - 10);
-        tft->print(oldTorqueStr);
+        tft->setFont(&FreeSans18pt7b);
+        tft->setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+        char percentStr[8];
+        sprintf(percentStr, "%d", torquePercent);
 
-        tft->setTextColor(ST77XX_WHITE);
-        sprintf(torqueStr, "%d", motor_currentTorque);
-        tft->getTextBounds(torqueStr, 0, 0, &x1, &y1, &w, &h); // Max 4 digits
-        tft->setCursor(SCREEN_WIDTH - 40 - w/2, SCREEN_HEIGHT /2 - 10);
-        tft->print(torqueStr);
+        tft->getTextBounds(percentStr, 0, 0, &x1, &y1, &w, &h);
+        tft->setCursor(speedoCX - w / 2, speedoCY+ h/2);
+        tft->print(percentStr);
 
         prevTorque = motor_currentTorque;
     }
+
 
     // --- COMM status (bottom left) ---
     if (prevCommStatus != commStatus) {
@@ -796,21 +831,18 @@ void drawCalibratingScreen() {
     }
 
     // --- Calibration progress (bottom right) ---
-    // You need to make currentCal global/extern in your calibration logic for this to be accurate!
-    if (prevStep != step || prevTotal != totalSteps) {
+    if (prevStep != step) {
 
         int16_t x1, y1;
         uint16_t w, h;
         tft->setFont(&FreeSans18pt7b);
-        tft->setTextColor(ST77XX_BLACK);
-        char oldStepStr[16];
-
-        sprintf(oldStepStr, "%d / %d", prevStep, prevTotal);
+        tft->setTextColor(ST77XX_WHITE);
         tft->getTextBounds("888 / 888", 0, 0, &x1, &y1, &w, &h);
-        tft->setCursor(SCREEN_WIDTH - 10 - w, SCREEN_HEIGHT*0.90);
-        tft->print(oldStepStr);
 
-        tft->setTextColor(COLOR_YELLOW);
+        int statusX = SCREEN_WIDTH - 20 -w;
+        int statusY = SCREEN_HEIGHT*0.9;
+        tft->fillRect(statusX - 1, statusY - h, w + 12, h + 8, ST77XX_BLACK);
+
         char stepStr[16];
         sprintf(stepStr, "%d / %d", step, totalSteps);
         tft->getTextBounds(stepStr, 0, 0, &x1, &y1, &w, &h);
@@ -819,7 +851,6 @@ void drawCalibratingScreen() {
         tft->print(stepStr);
 
         prevStep = step;
-        prevTotal = totalSteps;
     }
 }
 
@@ -936,21 +967,12 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
 
     if (initializedScreenId != thisScreenId) {
         tft->fillScreen(ST77XX_BLACK);
-
-        // Show menu item name, top center
-        tft->setFont(&FreeSans12pt7b);
-        tft->setTextColor(ST77XX_WHITE);
-        int16_t x1, y1; uint16_t w, h;
-        tft->getTextBounds(item.name, 0, 0, &x1, &y1, &w, &h);
-        tft->setCursor((SCREEN_WIDTH - w) / 2, 30);
-        tft->print(item.name);
-
         initializedScreenId = thisScreenId;
         prevSelectedIdx = 0xFFFF;
         prevMenuNum = 0xFFFF;
         prevValue = 0xFFFF; // invalid so redraw
 
-      // Special case: Calibrate (Menu1[4])
+      // Special case: Calibrate (Menu1[CALIBRATE])
       if (menuNum == 1 && selectedIdx == 4) {
         // "Calibrate?" top center
         tft->setFont(&FreeSans18pt7b);
@@ -974,40 +996,92 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
         tft->getTextBounds(msg3, 0, 0, &x1, &y1, &w, &h);
         tft->setCursor((SCREEN_WIDTH - w) / 2, 140);
         tft->print(msg3);
-        return;
-      }
-    }
-
-    if(prevValue != item.value) {
-      tft->fillRect(0, 60, SCREEN_WIDTH, SCREEN_HEIGHT-60, ST77XX_BLACK);
-      // If min/max are 0/1, show "Disabled"/"Enabled" with box around selected
-      if (item.minValue == 0 && item.maxValue == 1) {
-          const char* labels[2] = {"Disabled", "Enabled"};
-          int selected = (item.value == 0) ? 0 : 1;
-
-          for (int i = 0; i < 2; ++i) {
-              const GFXfont* font = (i == selected) ? &FreeSans18pt7b : &FreeSans12pt7b;
-              tft->setFont(font);
-              tft->setTextColor(ST77XX_WHITE);
-              int16_t x1, y1; uint16_t w, h;
-              tft->getTextBounds(labels[i], 0, 0, &x1, &y1, &w, &h);
-              int y = 100 + i * 50;
-              tft->setCursor((SCREEN_WIDTH - w) / 2, y);
-              tft->print(labels[i]);
-              if (i == selected) {
-                  tft->drawRoundRect((SCREEN_WIDTH - w) / 2 - 8, y - h - 6 , w + 22, h + 16, 6, COLOR_GREEN);
-              }
-          }
-      } else {
-          // Show value, big and centered
-          char valStr[16];
-          sprintf(valStr, "%d", item.value);
-          tft->setFont(&FreeSans24pt7b);
-          tft->setTextColor(COLOR_GREEN);
+      } else { 
+          // Show menu item name, top center
+          tft->setFont(&FreeSans12pt7b);
+          tft->setTextColor(ST77XX_WHITE);
           int16_t x1, y1; uint16_t w, h;
-          tft->getTextBounds(valStr, 0, 0, &x1, &y1, &w, &h);
-          tft->setCursor((SCREEN_WIDTH - w) / 2, SCREEN_HEIGHT / 2);
-          tft->print(valStr);
+          tft->getTextBounds(item.name, 0, 0, &x1, &y1, &w, &h);
+          tft->setCursor((SCREEN_WIDTH - w) / 2, 30);
+          tft->print(item.name);
+      }
+    } 
+    if(menuNum == 1 && selectedIdx == 4) prevValue = item.value; //basically do nothing
+    else {
+      if(prevValue != item.value) {
+        tft->fillRect(0, 60, SCREEN_WIDTH, SCREEN_HEIGHT-60, ST77XX_BLACK);
+        // If min/max are 0/1, show "Disabled"/"Enabled" with box around selected
+        prevValue = item.value;
+
+        if (item.minValue == 0 && item.maxValue == 1 && item.scalar == 1) {
+            const char* labels[2] = {"Disabled", "Enabled"};
+            const char* alt_labels[2] = {"Don't save", "Save"};
+            int selected = (item.value == 0) ? 0 : 1;
+            String macCopy = "", nameCopy = "";
+            if (xSemaphoreTake(scaleMutex, portMAX_DELAY)) {
+                macCopy = scale_mac;
+                nameCopy = scale_name;
+                xSemaphoreGive(scaleMutex);
+            } 
+
+            for (int i = 0; i < 2; ++i) {
+                const GFXfont* font = (i == selected) ? &FreeSans18pt7b : &FreeSans12pt7b;
+                tft->setFont(font);
+                tft->setTextColor(ST77XX_WHITE);
+                int16_t x1, y1; uint16_t w, h;
+                // Special case: Save scale (menu3.7)
+                if(menuNum == 3 && selectedIdx == 7) {
+                  tft->getTextBounds(alt_labels[i], 0, 0, &x1, &y1, &w, &h);
+
+                  int y = 100 + i * 50;
+                  tft->setCursor((SCREEN_WIDTH - w) / 2, y);
+                  tft->print(alt_labels[i]);
+                  if (i == selected) {
+                      tft->drawRoundRect((SCREEN_WIDTH - w) / 2 - 8, y - h - 6 , w + 22, h + 16, 6, COLOR_GREEN);
+                  }
+
+                  if(i == 0) {
+                    const char* msg4 = "last:";
+                    tft->setFont(&FreeSans9pt7b);
+
+                    int16_t x1, y1; uint16_t w, h;
+                
+                    tft->setCursor(10, 180);
+                    tft->print(msg4);
+
+                    tft->getTextBounds(msg4, 0, 0, &x1, &y1, &w, &h);
+                    tft->setCursor(w + 30, 180);
+                    tft->print(nameCopy);
+
+                    tft->setFont(); // basic small font
+                    tft->getTextBounds(macCopy, 0, 0, &x1, &y1, &w, &h);
+                    tft->setCursor((SCREEN_WIDTH - w) / 2, 200);
+                    tft->print(macCopy); 
+                  } 
+                } else 
+                { // normal case
+                  tft->getTextBounds(labels[i], 0, 0, &x1, &y1, &w, &h);
+
+                  int y = 100 + i * 50;
+                  tft->setCursor((SCREEN_WIDTH - w) / 2, y);
+                  tft->print(labels[i]);
+                  if (i == selected) {
+                      tft->drawRoundRect((SCREEN_WIDTH - w) / 2 - 8, y - h - 6 , w + 22, h + 16, 6, COLOR_GREEN);
+                  }
+                }
+            }
+
+        } else {
+            // Show value, big and centered
+            char valStr[16];
+            sprintf(valStr, "%d", item.value);
+            tft->setFont(&FreeSans24pt7b);
+            tft->setTextColor(COLOR_GREEN);
+            int16_t x1, y1; uint16_t w, h;
+            tft->getTextBounds(valStr, 0, 0, &x1, &y1, &w, &h);
+            tft->setCursor((SCREEN_WIDTH - w) / 2, SCREEN_HEIGHT / 2);
+            tft->print(valStr);
+        }
       }
     }
-}
+} 

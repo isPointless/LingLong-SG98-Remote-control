@@ -3,6 +3,9 @@
 #ifndef display_h
 #define display_h
 
+extern bool dimmed;
+extern bool disp_updateRequired;
+
 void display_init();
 void setBrightness();
 void update_display();

@@ -1,13 +1,11 @@
 #include "definitions.h"
 
-#ifdef RT_DRIVE
-
-#define BAUD_RATE 115200 //default for RT
+#define BAUD_RATE 9600 //default for RT
 #define PARITY SERIAL_8N1 //default for RT
 
 #ifndef comm_h
-#define comm_h
 
+#define comm_h
 #define SLAVE_ID 0x01
 #define FUNC_READ_HOLDING_REGISTERS 0x03
 #define FUNC_WRITE_SINGLE_REGISTER 0x06
@@ -17,15 +15,17 @@ void comm_init(); //init RS485 communication
 
 bool writeConfirm(uint16_t reg_addr, uint16_t value);
 uint16_t readReturn(uint16_t reg_addr, uint16_t reg_count);
+bool writeMultipleConfirm(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2=0, uint16_t data3=0, uint16_t data4=0);
 
 bool writeSingleRegister(uint16_t reg_addr, uint16_t value);
+bool writeMultipleRegisters(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2=0xFF, uint16_t data3=0xFF, uint16_t data4=0xFF);
 bool readRegister(uint16_t reg_addr, uint16_t reg_count);
 
 extern bool receive(); 
-
-extern uint16_t lastRead[8]; 
-extern uint8_t lastRequestType; //0 = writeSingle, 101 = readSingleRegister, 102 = read two registers etc
+extern uint16_t lastRead[]; 
+extern uint8_t lastRequestType; //0 = writeSingle, 101 = readSingleRegister, 102 = read two registers etc, 201 writeMultiperRg(1pc), 202 writeMultipleReg(2pcs)
 extern uint16_t errorCode; 
+extern unsigned long lastReceived; //used for connection states;
 
 
 uint16_t modbus_crc16(uint8_t* buf, int length);
@@ -40,5 +40,4 @@ inline void setRXmode() {
   digitalWrite(RS485RE, LOW); 
 }
 
-#endif
 #endif

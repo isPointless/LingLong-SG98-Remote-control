@@ -1,7 +1,12 @@
 #include "definitions.h"
+#include <BLEScale.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #ifndef gbw_h
 #define gbw_h
+
+extern BLEScale scale;
 
 //#define DEBUG false
 
@@ -12,6 +17,14 @@ extern volatile bool grindingComplete;
 extern volatile bool gbw_started;
 extern volatile bool scaleConnected;
 extern volatile int32_t currentWeight;
+extern volatile bool saveScaleEnabled;
+
+extern String scale_mac;
+extern String scale_name;
+extern String scale_connect_mac;
+extern String scale_connect_name;
+
+extern SemaphoreHandle_t scaleMutex;
 
 struct GBW_WEIGHT { 
     uint32_t time;

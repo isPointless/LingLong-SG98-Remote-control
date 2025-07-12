@@ -7,7 +7,9 @@
 #include "display.h"
 #include "io.h"
 
-#define DEBUG
+
+
+#define DEBUG_CALIBRATE
 
 #ifdef RT_DRIVE 
 #include "comm_rt.h"
@@ -27,45 +29,47 @@ bool enterMenu = false;
 bool firstBootFlag = false;
 
 menuEntry Menu1[NUM_MENU1_ITEMS] = { 
-    {"EXIT MENU", 0, 0, 0, 0}, //0
-    {"Brightness", default_brightness, 1, 255, 1}, //1
-    {"Purge Settings", 0, 0, 0, 0}, //2
-    {"GbW Settings", 0, 0, 0, 0}, //3
-    {"Calibrate", 0, 0 ,0, 0}, //4
-    {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar}, //5
-    {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar}, //6
-    {"Sleep time", default_sleepTime, 0, 1800, 30}, //7
+    {"EXIT MENU", 0, 0, 0, 0, "EXITMENU"}, //0
+    {"Brightness", default_brightness, 1, 255, 1, "BRIGHTNESS"}, //1
+    {"Purge Settings", 0, 0, 0, 0, "PURGESETT"}, //2
+    {"GbW Settings", 0, 0, 0, 0, "GBWSETT"}, //3
+    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE"}, //4
+    {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM"}, //5
+    {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM"}, //6
+    {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT"}, //7
+    {"Motor torque %", default_motor_torque, 1, 3000, 10, "MOTORTORQ"},
 };
 menuEntry Menu2[NUM_MENU2_ITEMS] = { 
-    {"BACK", 0, 0, 0}, //0
-    {"Purge /w button", default_buttonPurge, 0, 1, 1}, //1
-    {"Purge frames LOW", default_purgeFramesLow, 2, 20, 1}, //2
-    {"Purge frames HIGH", default_purgeFramesHigh, 2, 20, 1}, //3
-    {"Purge Scalar LOW", default_purgePrctLow, 101, 200, 1}, //4
-    {"Purge Scalar HIGH", default_purgePrctHigh, 101, 200, 1}, //5
-    {"Purge duration", default_purgeDuration, 500, 5000, 100,}, //6
-    {"Purge delay", default_purgeDelay, 100, 10000, 50}, //7
-    {"Reverse rotation", default_reverseRotation, absolute_min_rpm, absolute_max_rpm, rpm_scalar}, //8
-    {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1}, //9
-    {"Purge stabilize time", default_purgeStabilTime, 100, 5000, 50}, //10
-    {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar}, //11
-};
-menuEntry Menu3[NUM_MENU3_ITEMS] = { 
-    {"BACK", 0, 0, 0, 0}, //0
-    {"GbW RPM", default_GBWRPM, 200, 1500, rpm_scalar}, //1
-    {"GbW Slow Phase t", default_slow_time, 1, 2000, 50}, //2
-    {"GbW Slow RPM", default_slow_rpm, rpm_scalar, 500, rpm_scalar}, //3
-    {"SpeedModifier", default_speedModifier, 1, 32767, 0}, //4 * 10.000
-    {"Start delay", default_start_delay, 0, 1000, 50}, // 5
-    {"Time offset", default_time_offset, 0, 1000, 10}, // 6
+    {"BACK", 0, 0, 0, 0, "RETURN2"}, //0
+    {"Purge /w button", default_buttonPurge, 0, 1, 1, "PURGEBTN"}, //1
+    {"Purge frames LOW", default_purgeFramesLow, 2, 20, 1, "PURGEFRL"}, //2
+    {"Purge frames HIGH", default_purgeFramesHigh, 2, 20, 1, "PURGEFRH"}, //3
+    {"Purge Scalar LOW", default_purgePrctLow, 101, 200, 1, "PURGESCLRL"}, //4
+    {"Purge Scalar HIGH", default_purgePrctHigh, 101, 200, 1, "PURGESCLRH"}, //5
+    {"Purge duration", default_purgeDuration, 500, 5000, 100, "PURGEDUR"}, //6
+    {"Purge delay", default_purgeDelay, 100, 10000, 50, "PURGEDEL"}, //7
+    {"Reverse rotation", default_reverseRotation, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "RVRSRPM"}, //8
+    {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE"}, //9
+    {"Purge stabilize time", default_purgeStabilTime, 100, 5000, 50, "PURGESTABILT" }, //10
+    {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "PURGEFWRPM" }, //11
 };
 
-volatile bool newData = true;
+menuEntry Menu3[NUM_MENU3_ITEMS] = { 
+    {"BACK", 0, 0, 0, 0, "RETURN3"}, //0
+    {"GbW RPM", default_GBWRPM, 200, 1500, rpm_scalar, "GBWRPMSET"}, //1
+    {"GbW Slow Phase t", default_slow_time, 0, 2000, 1, "GBWSLOWT"}, //2
+    {"GbW Slow RPM", default_slow_rpm, rpm_scalar, 500, rpm_scalar, "GBWSLOWRPM"}, //3
+    {"SpeedModifier", default_speedModifier, 1, 32767, 0, "GBWSPEEDMOD"}, //4 * 10.000
+    {"Start delay", default_start_delay, 0, 1000, 50, "GBWSTARTDEL"}, // 5
+    {"Time offset", default_time_offset, 0, 1000, 10, "TIMEOFFSET"}, // 6
+    {"Save scale", 0, 0, 1, 1, "SCALESTORED"}, //7
+};
+
+volatile bool newData = true; //This is newdata from DRIVE COMM
 
 volatile uint8_t error = 0;
 int16_t setRPM = default_setRPM;
 uint32_t setWeight = default_setWeight;
-volatile bool runGbwVitals = true;
 
 unsigned long lastActivity = 0;
 
@@ -78,19 +82,43 @@ bool ready_purge = false;
 
 void scaleTask(void *pvParameters) {
     scales_init(); // Run once at task start
+
+    if (scaleMutex == NULL) {
+        Serial.println("Failed to create scaleMutex!");
+        // handle error (optional)
+    }
+
     while (1) {
-        if (runGbwVitals) {
-            gbwVitals();
-        }
+        gbwVitals();
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
 void setup() { 
-    delay(2000);
     Serial.begin(115200);
+    scaleMutex = xSemaphoreCreateMutex();
+    if (scaleMutex == NULL) {
+        Serial.println("Failed to create mutex!");
+    }
+    delay(2000);
+    
     Serial.println("start");
     setCpuFrequencyMhz(80);
+
+    if(rtc_bootFlag1 == true) { 
+        sleep_release();
+    }
+
+    pdata_init(); //This sets state as well!
+    Serial.println("pdata init");
+
+    if(firstBootFlag == 1) { 
+         pdata_write(0);
+         Serial.println("Wrote all default values...");
+    } else { 
+        pdata_read(); 
+        Serial.println("pdata read");
+    }
     
     xTaskCreatePinnedToCore(
     scaleTask,         // Task function
@@ -101,10 +129,6 @@ void setup() {
     NULL,              // Task handle
     0                  // Core 0 (use 1 for core 1)
     );
-    
-    if(rtc_bootFlag1 == true) { 
-        sleep_release();
-    }
 
     #ifdef DEBUG
     Serial.print("Wakeup cause: ");
@@ -113,26 +137,15 @@ void setup() {
     Serial.println(esp_reset_reason());
     #endif
 
-    // comm_init();
-    // Serial.println("Comm init");
-    // motor_init();
-    // Serial.println("motor_init");
-    vitals_init();
-    
-    pdata_init(); //This sets state as well!
-    Serial.println("pdata init");
-
-    if(firstBootFlag == 1) { 
-         pdata_write(0);
-    } 
-
     display_init();
     Serial.println("display init");
-    pdata_read();
-    Serial.println("pdata read");
-
-    lastActivity = millis();
     io_init();
+    comm_init();
+    Serial.println("Comm init");
+    motor_init();
+    Serial.println("motor_init");
+    vitals_init();
+    lastActivity = millis();
 }
 
 void loop() { 
@@ -140,34 +153,10 @@ void loop() {
     do_comm();
     do_io();
     sleepTimeCheck();
-
-    if(newData == true) {
-        update_display();
-        newData = false;
-        // #ifdef DEBUG
-        //     Serial.print("newdata! state: ");
-        //     Serial.print(state);
-        //     Serial.print(" rpm: ");
-        //     Serial.print(setRPM);
-        //     Serial.print(" weight: ");
-        //     Serial.print(setWeight);
-        //     Serial.print(" M1: ");
-        //     Serial.print(menu1Selected);
-        //     Serial.print(" M2: ");
-        //     Serial.print(menu2Selected);
-        //     Serial.print(" M3: ");
-        //     Serial.println(menu3Selected);
-
-        //     Serial.print("Minimum free heap since boot: ");
-        //     Serial.println(esp_get_minimum_free_heap_size());
-
-        //     UBaseType_t stackRemaining = uxTaskGetStackHighWaterMark(NULL);
-        //     Serial.print("Stack high water mark: ");
-        //     Serial.println(stackRemaining);
-        // #endif
-    }
+    update_display();
 
     if(state == SLEEPING){ 
+        esp_task_wdt_deinit();
         ledAction(0);
         motorOff();
         display_off();
@@ -181,25 +170,23 @@ void loop() {
 
     if(state == IDLE_GBW) { 
         motor_setRPM = 0;
-        runGbwVitals = true;
     }
 
     if(state == GRINDING)
     { 
         motor_setRPM = setRPM;
         checkPurge();
-        lastActivity = millis();
+        //lastActivity = millis();
     }
 
     if(state == PURGING) { 
         ledAction(1);
         do_purge();
-        lastActivity = millis();
+      //  lastActivity = millis();
     }
 
     if(state == GRINDING_GBW)
     { 
-        runGbwVitals = true;
         do_gbw();
         lastActivity = millis();
     }
@@ -221,11 +208,12 @@ void loop() {
     }
 
     if(state == CALIBRATING) { 
-        // ledAction(1);
-        // Calibrate();
+        ledAction(1);
+        Calibrate();
         lastActivity = millis();
     }
 
+   // newData = false;
 }
 
 
@@ -246,33 +234,41 @@ void checkPurge() {
         frameCounter = 0;
     }
 
+
     //Reset if the RPM is changed
     if(setRPM != last_setRPM) {
         last_setRPM = setRPM;
         frameCounter = 0;
         ready_purge = false;
-        //lastActivity=millis(); < superfluous 
+        startTime = millis();
+    }
+
+    if(startTime + 60000 < millis() && ready_purge == false) { 
+        motor_setRPM = 0;
+        state = IDLE;
     }
 
     //value 9 = auto purge enabled, value 10 = auto purge calibration delay
-    if(Menu2[9].value == true && startTime + Menu2[10].value < millis() && lastActivity + 1000 < millis() && newData == true) 
+    if(Menu2[AUTO_PURGE_ENABLED].value == true && startTime + Menu2[SETPURGESTABILTIME].value < millis() && lastActivity + 1000 < millis() && newData == true) 
     { 
-        //the torque defined during calibration
-      test_torque = calibrateArray[((setRPM + absolute_min_rpm)/rpm_scalar)];
+    //the torque defined during calibration
+    
+      if(rpm_scalar != 0) test_torque = calibrateArray[((setRPM + absolute_min_rpm)/rpm_scalar)];
+        Serial.print("torque: "), Serial.print(motor_currentTorque), Serial.print(" test: "), Serial.println(test_torque);
 
       if(setRPM > 500) { //High values
-        test_scalar = Menu2[5].value;
-        purge_frames = Menu2[3].value;
+        test_scalar = Menu2[SETPURGEPRCTHIGH].value;
+        purge_frames = Menu2[SETPURGEFRAMESHIGH].value;
       } else {          // low values
-        test_scalar = Menu2[4].value;
-        purge_frames = Menu2[2].value;
+        test_scalar = Menu2[SETPURGEPRCTLOW].value;
+        purge_frames = Menu2[SETPURGEFRAMESLOW].value;
       }
 
       ///if the actual torque is greater than the calibrated torque*scalar we count up frames (note only when newData = true)
       if(motor_currentTorque > (test_torque*test_scalar)/100.f) { 
         frameCounter++;
         #ifdef DEBUG_CALIBRATE
-          SerialUSB.print("frame counter: "), SerialUSB.println(frameCounter);
+          Serial.print("frame counter: "), Serial.println(frameCounter);
         #endif
       } else {  //If it's smaller, we set the frames to 0;
         frameCounter = 0;
@@ -282,22 +278,21 @@ void checkPurge() {
       if(frameCounter >= purge_frames)  
       { 
         ready_purge = true;
-        lastActivity = millis();
+        lastActivity = millis(); //Update the last known time we were grinding.. 
       }
       
       //If the frames have gone to 0; we are no longer grinding -> after purgedelay(7) we will commense the purge
-      if(ready_purge == true && (lastActivity + Menu2[7].value) < millis()) 
+      if(ready_purge == true && (lastActivity + Menu2[SETPURGEDELAY].value) < millis()) 
       { 
         #ifdef DEBUG_CALIBRATE
-        SerialUSB.println("go purge");
+        Serial.println("go purge");
         #endif
-        newData = true;
+        disp_updateRequired = true;
         ready_purge = false;
         frameCounter = 0; //should already be 0 but ok.
         state = PURGING;
         }
     }
-
     lastCall = millis();
 }
 
@@ -321,40 +316,42 @@ void do_purge() {
     if(startTime + delayTime > millis()) { 
         motor_setRPM = 0; 
         phase = 1; 
+        if(Menu2[SETPURGERPM].value == 0 && Menu2[SETPURGEREVERSE].value == 0) state = IDLE;
     }
+
     // Time between 500 and 500 + purgeTime 
-    if(startTime + delayTime < millis() && startTime + delayTime + Menu2[6].value > millis()) {
-        motor_setRPM = Menu2[11].value; 
+    if(startTime + delayTime < millis() && startTime + delayTime + Menu2[SETPURGETIME].value > millis()) {
+        motor_setRPM = Menu2[SETPURGERPM].value; 
         phase = 2;
     }
     //We're not doing reverse
-    if(Menu2[8].value == false && startTime + delayTime + Menu2[6].value < millis()) {
+    if(Menu2[SETPURGEREVERSE].value == false && startTime + delayTime + Menu2[SETPURGETIME].value < millis()) {
         motor_setRPM = 0;
         state = IDLE;
-        newData = true;
+        disp_updateRequired = true;
         phase = 5;
     } else { 
         //were doing reverse, pause for 500ms 
-        if(startTime + delayTime + Menu2[6].value < millis() && startTime + 2*delayTime + Menu2[6].value > millis()) { 
+        if(startTime + delayTime + Menu2[SETPURGETIME].value < millis() && startTime + 2*delayTime + Menu2[SETPURGETIME].value > millis()) { 
             motor_setRPM = 0;
             phase = 3;
         }
         //do another reverse purge for purge time
-        if(startTime + 2*delayTime + Menu2[6].value < millis() && startTime + 2*delayTime + 2*Menu2[6].value > millis()) {
-            motor_setRPM = (-1)*Menu2[8].value;
+        if(startTime + 2*delayTime + Menu2[SETPURGETIME].value < millis() && startTime + 2*delayTime + 2*Menu2[SETPURGETIME].value > millis()) {
+            motor_setRPM = (-1)*Menu2[SETPURGEREVERSE].value;
             phase = 4;
         }
-        if(startTime + 2*delayTime + 2*Menu2[6].value < millis()) { 
+        if(startTime + 2*delayTime + 2*Menu2[SETPURGETIME].value < millis()) { 
             phase = 5;
             motor_setRPM = 0;
             state = IDLE;
-            newData = true;
+            disp_updateRequired = true;
         }
     }
 
     if(phase != last_purge_phase) { 
         Serial.println(phase);
-        newData = true;
+        disp_updateRequired = true;
         last_purge_phase = phase;
         Serial.println(motor_setRPM);
     }
@@ -364,7 +361,7 @@ void do_purge() {
 
 
 void vitals_init() { 
-  esp_task_wdt_init(2, true);
+  esp_task_wdt_init(3, false);
   esp_task_wdt_add(NULL); // Add current task (loop task)
 }
 
@@ -423,15 +420,12 @@ void doVitals() {
 
 
 void sleepTimeCheck() { 
-    if(Menu1[7].value == 0) {
-        setBrightness();
-        return;
-    }
-    else { 
-        if(lastActivity + Menu1[7].value * 1000 < millis()) { 
-            rtc_state = state; // save last state
-            state = SLEEPING;
-            Serial.println("sleep!");
-        }
+    if(Menu1[SETSLEEP].value == 0) return;
+
+    if(lastActivity + (Menu1[SETSLEEP].value * 60000) < millis() && millis() > (Menu1[SETSLEEP].value * 60000)) { 
+        rtc_state = state; // save last state
+        Serial.println(Menu1[SETSLEEP].value * 60000);
+        state = SLEEPING;
+        Serial.println("sleep!");
     }
 }

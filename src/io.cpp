@@ -5,6 +5,8 @@
 #include <JC_Button.h>
 #include <ESP32Encoder.h>
 #include "pdata.h"
+#include "display.h"
+#include "gbw.h"
 
 #ifdef JMC_DRIVE
 #include "motorcontrol_jmc.h"
@@ -49,14 +51,14 @@ void do_io() {
         ledAction(3);
         setRPM += encoder_change()*rpm_scalar;
 
-        if(setRPM > Menu1[5].value) setRPM = Menu1[5].value;
-        if(setRPM < Menu1[6].value) setRPM = Menu1[6].value;
+        if(setRPM > Menu1[SETMAX].value) setRPM = Menu1[SETMAX].value;
+        if(setRPM < Menu1[SETMIN].value) setRPM = Menu1[SETMIN].value;
         
         //START BUTTON
-        if(START_BUTTON() == true && longPress == false) state = GRINDING;
+        if(START_BUTTON() == true && longPress == false && dimmed == false) state = GRINDING;
 
         //ENC BUTTON
-        if(ENC_BUTTON() == true) { 
+        if(ENC_BUTTON() == true && dimmed == false) { 
             notReleasedYet = false;
             if(longPress == false) { 
                 state = MENU1;
@@ -65,7 +67,7 @@ void do_io() {
         } else { // enc_button == false
             if(longPress == true && notReleasedYet == false) {  //when we're still holding longPress 
             state = IDLE_GBW;
-            newData = true;
+            disp_updateRequired = true;
             notReleasedYet = true;
             pdata_write(5);
             }
@@ -92,7 +94,7 @@ void do_io() {
         if(START_BUTTON() == true && longPress == false) state = GRINDING_GBW;
 
         //ENC BUTTON
-        if(ENC_BUTTON() == true) { 
+        if(ENC_BUTTON() == true && dimmed == false) { 
             notReleasedYet = false;
             if(longPress == false) { 
                 state = MENU1;
@@ -101,13 +103,13 @@ void do_io() {
         } else { // enc_button == false
             if(longPress == true && notReleasedYet == false) {  //when we're still holding longPress 
             state = IDLE;
-            newData = true;
+            disp_updateRequired = true;
             notReleasedYet = true;
             pdata_write(5);
             }
         }
         //OTHER
-        if(pressedLong() == true) { 
+        if(pressedLong() == true && dimmed == false) { 
             longPress = true;
         } else longPress = false;
         
@@ -125,11 +127,11 @@ void do_io() {
 
         setRPM += encoder_change()*rpm_scalar;
 
-        if(setRPM > Menu1[5].value) setRPM = Menu1[5].value;
-        if(setRPM < Menu1[6].value) setRPM = Menu1[6].value;
+        if(setRPM > Menu1[SETMAX].value) setRPM = Menu1[SETMAX].value;
+        if(setRPM < Menu1[SETMIN].value) setRPM = Menu1[SETMIN].value;
 
         if(START_BUTTON() == true) { 
-            state = (Menu2[1].value == true? PURGING : IDLE);
+            state = (Menu2[SETBUTTONPURGE].value == true? PURGING : IDLE);
         }
         if(ENC_BUTTON() == true) { 
             state = IDLE;
@@ -201,7 +203,8 @@ void do_io() {
             }
         } else if(longPress == true && menu1Selected == CALIBRATE) { 
             state = CALIBRATING;  
-            newData = true;
+            enterMenu = false;
+            disp_updateRequired = true;
             notReleasedYet = true;
             }
 
@@ -227,7 +230,7 @@ void do_io() {
             if(Menu2[menu2Selected].value > Menu2[menu2Selected].maxValue) Menu2[menu2Selected].value = Menu2[menu2Selected].maxValue;
             if(Menu2[menu2Selected].value < Menu2[menu2Selected].minValue) Menu2[menu2Selected].value = Menu2[menu2Selected].minValue;
             
-            if(menu2Selected == SETBUTTONPURGE && Menu2[1].value == true) { 
+            if(menu2Selected == SETBUTTONPURGE && Menu2[SETBUTTONPURGE].value == true) { 
                 ledAction(2);
             } else ledAction(0);
         }
@@ -286,7 +289,28 @@ void do_io() {
                 OriginalValue = Menu3[menu3Selected].value;
             } else { 
                 enterMenu = false;
+                // Special case
+                if(menu3Selected == 7) {
+                    if(Menu3[SAVE_SCALE].value == 0) {
+                        pdata_write(6);  //remove stored scale stuff
+                        if (xSemaphoreTake(scaleMutex, portMAX_DELAY)) {
+                            scale_connect_mac = "";
+                            scale_connect_name = "";
+                            xSemaphoreGive(scaleMutex);
+                        } 
+                    }
+                    if(Menu3[SAVE_SCALE].value == 1) { 
+                        if (xSemaphoreTake(scaleMutex, portMAX_DELAY)) {
+                            scale_connect_mac = scale_mac;
+                            scale_connect_name = scale_name;
+                            xSemaphoreGive(scaleMutex);
+                        } 
+                        pdata_write(7);
+                    }
+                } else 
                 pdata_write(2);
+
+            
             }
         } 
     }
@@ -299,12 +323,14 @@ void do_io() {
                 motorOff();
                 error = 102;
                 state = MENU1;
+                enterMenu = false;
             }
         }
         if(START_BUTTON() == true) {
             motorOff();
             error = 102;
             state = MENU1;
+            enterMenu = false;
         }
 
         ledAction(1);
@@ -331,7 +357,7 @@ int16_t encoder_change() {
 
     if(change != 0) { 
         lastActivity = millis();
-        newData = true;
+        disp_updateRequired = true;
     }
     return change;
 }
@@ -346,7 +372,7 @@ bool ENC_BUTTON() {
   enc_button.read();
     if (enc_button.wasReleased()) { 
         lastActivity = millis();
-        newData = true;
+        disp_updateRequired = true;
         return true;
     }
     return false;
@@ -356,7 +382,7 @@ bool START_BUTTON() {
     start_button.read();
     if (start_button.wasReleased()) { 
         lastActivity = millis();
-        newData = true;
+        disp_updateRequired = true;
         return true;
     }
     return false;
