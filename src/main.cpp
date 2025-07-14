@@ -59,7 +59,7 @@ menuEntry Menu3[NUM_MENU3_ITEMS] = {
     {"GbW RPM", default_GBWRPM, 200, 1500, rpm_scalar, "GBWRPMSET"}, //1
     {"GbW Slow Phase t", default_slow_time, 0, 2000, 1, "GBWSLOWT"}, //2
     {"GbW Slow RPM", default_slow_rpm, rpm_scalar, 500, rpm_scalar, "GBWSLOWRPM"}, //3
-    {"SpeedModifier", default_speedModifier, 1, 32767, 0, "GBWSPEEDMOD"}, //4 * 10.000
+    {"SpeedModifier", default_speedModifier, 1, 32767, 100, "GBWSPEEDMOD"}, //4 * 10.000
     {"Start delay", default_start_delay, 0, 1000, 50, "GBWSTARTDEL"}, // 5
     {"Time offset", default_time_offset, 0, 1000, 10, "TIMEOFFSET"}, // 6
     {"Save scale", 0, 0, 1, 1, "SCALESTORED"}, //7

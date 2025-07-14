@@ -3,12 +3,13 @@
 #pragma once
 
 //DEBUG FLAGS
+#define DEBUG_SCALE false
 // #define DEBUG_COMM
 // #define DEBUG_CALIB
 // #define DEBUG_GBW
 
 //#define BUILD_ID __DATE__ __TIME__
-#define BUILD_ID "0001"
+#define BUILD_ID "0002"
 
 // USER SETTINGS
 #define absolute_min_rpm 0
@@ -93,9 +94,9 @@
 #define default_GBWRPM 600
 #define default_slow_time 400
 #define default_slow_rpm 200
-#define default_speedModifier 5000
+#define default_speedModifier 4500
 #define default_start_delay 200
-#define default_time_offset 400
+#define default_time_offset 300
 
 
 #define default_autoPurgeEnabled 1

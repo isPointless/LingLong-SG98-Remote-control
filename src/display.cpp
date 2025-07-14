@@ -65,10 +65,7 @@ void display_init() {
 void setBrightness() { 
   static uint8_t lastBrightness;
   uint8_t newBrightness;
-  uint16_t dimTime;
-
-  if(Menu1[SETSLEEP].value < 10) dimTime = 5;
-  else dimTime = Menu1[SETSLEEP].value / 2;
+  static int dimTime = 15; 
 
   if(lastActivity + dimTime * 60000 < millis()) { 
     newBrightness = 1;

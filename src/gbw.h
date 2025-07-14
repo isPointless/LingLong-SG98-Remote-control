@@ -8,16 +8,10 @@
 
 extern BLEScale scale;
 
-//#define DEBUG false
-
-//extern int counter;
 extern float speedModifier;
 
-extern volatile bool grindingComplete;
-extern volatile bool gbw_started;
 extern volatile bool scaleConnected;
 extern volatile int32_t currentWeight;
-extern volatile bool saveScaleEnabled;
 
 extern String scale_mac;
 extern String scale_name;
