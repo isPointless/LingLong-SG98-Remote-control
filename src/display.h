@@ -5,12 +5,14 @@
 
 extern bool dimmed;
 extern bool disp_updateRequired;
+extern unsigned long drawnErrorAt;
 
 void display_init();
 void setBrightness();
 void update_display();
 void display_off();
 
+void drawErrorOverlay();
 void drawIdleScreen();
 void drawGbWIdleScreen();
 void drawGrindingOrPurgingScreen();

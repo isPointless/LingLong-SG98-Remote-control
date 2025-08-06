@@ -142,7 +142,7 @@ void do_gbw() {
     static bool learned;
 
     #ifndef DEBUG_GBW
-    if(commStatus != CONNECTED) { 
+    if(commStatus != COMM_CONNECTED) { 
         motorOff();
         state = IDLE_GBW;
     }
@@ -396,13 +396,10 @@ int16_t gbw_predict() {
 
 void gbw_learn() { 
     int overshoot;
-    bool isProper = false;
+    bool isProper = true;
     int16_t newOffset;
     uint16_t firstVal = 0;
     uint16_t secondVal = 0;
-
-    if(abs((int32_t)setWeight - currentWeight) > 5000) isProper = false;
-    else isProper = true;
 
     #ifdef DEBUG_GBW
         for(int i = 0; i < last_shot_updated; i++) { 
@@ -455,20 +452,22 @@ void gbw_learn() {
         Serial.println(last_shot_updated);
     #endif 
 
-    if (test_time_diff < 1000) return; // It's not a proper shot.
+    if (test_time_diff < 600) return; // It's not a proper shot.
     if(firstVal == 0 || secondVal == 0) return; //not a proper shot
     if (test_time_diff == 0) return; // Prevent division by zero
-
+ 
     //Calculations
     float grindSpeed = test_weight_diff / float(test_time_diff);
 
     float rpm = Menu3[GBW_RPM_SET].value;
-    if (rpm == 0) return; // Prevent division by zero
 
+    if (rpm == 0) return; // Prevent division by zero
     float ground_per_rotation = grindSpeed / (rpm / 60.f); // g/s / rot/s = g * rot
     
     if(speedModifier != 0.5) speedModifier = (ground_per_rotation + speedModifier)/2;
     else speedModifier = ground_per_rotation;
+
+    if(speedModifier < 0.2 || speedModifier > 0.8) isProper = false; //Not a proper shot,
 
     #ifdef DEBUG_GBW
         Serial.print("old speedmod: ");
@@ -480,6 +479,8 @@ void gbw_learn() {
     //Calculate offsets
     overshoot = currentWeight - setWeight;
 
+    if(abs(overshoot) > 5000) isProper = false; 
+
     if(Menu3[GBW_OFFSET].value == default_time_offset) newOffset = Menu3[GBW_OFFSET].value + overshoot/5;
     else newOffset = Menu3[GBW_OFFSET].value + overshoot/12;
     if(newOffset < 100 || newOffset > 600) isProper = false; // Not a proper shot
@@ -489,12 +490,19 @@ void gbw_learn() {
         Serial.print("lastOffset: "), Serial.print(Menu3[GBW_OFFSET].value), Serial.print(" Calculated offset: "), Serial.println(newOffset);
     #endif
 
-    Serial.print(" Proper?" ), Serial.println(isProper);
-
-    if(isProper) { 
+    if(isProper == true) { 
+        #ifdef DEBUG_GBW
+            Serial.println("Proper shot! saving values!");
+        #endif
         Menu3[GBW_SPEEDMOD].value = speedModifier*10000; //always save the new value.
         Menu3[GBW_OFFSET].value = newOffset;
         pdata_write(4);
+    } else { 
+        #ifdef DEBUG_GBW
+            Serial.println("Not a proper shot.. deleting calculated values..");
+            Serial.print("Calculated speedmod: "), Serial.println(speedModifier, 3);
+            Serial.print("Calculated new Offset: "), Serial.println(newOffset);
+        #endif
     }
 }
 

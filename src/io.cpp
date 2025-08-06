@@ -37,7 +37,7 @@ void io_init() {
     encoder.setFilter(100);
     encoder.setCount(0);
 
-    ledcSetup(0,4000,8);
+    ledcSetup(0,2000,10);
     ledcAttachPin(start_button_led, 0);
 }
 
@@ -61,8 +61,13 @@ void do_io() {
         if(ENC_BUTTON() == true && dimmed == false) { 
             notReleasedYet = false;
             if(longPress == false) { 
-                state = MENU1;
+                if(error == 0 || error == 1 || error == 2) state = MENU1;
                 lastIdle = true;
+                if(error > 2) { 
+                    error = 0;
+                    commCounter = 0;
+                }
+                disp_updateRequired = true;
             }
         } else { // enc_button == false
             if(longPress == true && notReleasedYet == false) {  //when we're still holding longPress 
@@ -97,8 +102,13 @@ void do_io() {
         if(ENC_BUTTON() == true && dimmed == false) { 
             notReleasedYet = false;
             if(longPress == false) { 
-                state = MENU1;
+                if(error == 0 || error == 1 || error == 2) state = MENU1;
                 lastIdle = false;
+                if(error > 2) { 
+                    error = 0;
+                    commCounter = 0;
+                }
+                disp_updateRequired = true;
             }
         } else { // enc_button == false
             if(longPress == true && notReleasedYet == false) {  //when we're still holding longPress 
@@ -161,10 +171,9 @@ void do_io() {
     if(state == MENU1) { 
         //Encoder routes
         if(enterMenu == false) { 
-            menu1Selected += encoder_change();
+            menu1Selected += Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
             ledAction(0);
         } 
-
         if(menu1Selected > NUM_MENU1_ITEMS-1) menu1Selected = 0;
         if(menu1Selected < 0) menu1Selected = NUM_MENU1_ITEMS - 1;
 
@@ -218,7 +227,7 @@ void do_io() {
     if(state == MENU2) { 
         //ENCODER ROUTE
         if(enterMenu == false) { 
-            menu2Selected += encoder_change();
+            menu2Selected += Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
             ledAction(0);
         }
 
@@ -261,7 +270,7 @@ void do_io() {
     if(state == MENU3) { 
         ledAction(0);
         //Encoder routes
-        if(enterMenu == false) menu3Selected += encoder_change();
+        if(enterMenu == false) Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
         if(menu3Selected > NUM_MENU3_ITEMS - 1) menu3Selected = 0;
         if(menu3Selected < 0) menu3Selected = NUM_MENU3_ITEMS - 1;
 
@@ -301,8 +310,10 @@ void do_io() {
                     }
                     if(Menu3[SAVE_SCALE].value == 1) { 
                         if (xSemaphoreTake(scaleMutex, portMAX_DELAY)) {
-                            scale_connect_mac = scale_mac;
-                            scale_connect_name = scale_name;
+                            if(scale_mac != "") {
+                                scale_connect_mac = scale_mac;
+                                scale_connect_name = scale_name;
+                            }
                             xSemaphoreGive(scaleMutex);
                         } 
                         pdata_write(7);
@@ -322,14 +333,14 @@ void do_io() {
             else {
                 motorOff();
                 error = 102;
-                state = MENU1;
+                state = lastIdle? IDLE : IDLE_GBW;
                 enterMenu = false;
             }
         }
         if(START_BUTTON() == true) {
             motorOff();
             error = 102;
-            state = MENU1;
+            state = lastIdle? IDLE : IDLE_GBW;
             enterMenu = false;
         }
 
@@ -392,18 +403,18 @@ void ledAction(uint8_t type) {  //Type: 0 = off, 1 = on, 2 = flashing, 3 = fadin
     static unsigned long lastCall;
     static uint8_t lastType;
     static unsigned long lastFlash;
-    static uint8_t lastLedValue;
-    uint8_t ledValue;
+    static uint16_t lastLedValue;
+    uint16_t ledValue;
     bool ledOn = true;
     
-    if(lastCall + 10 > millis()) return; //does this really add anything..?
+    // if(lastCall + 10 > millis()) return; //does this really add anything..? prob.
 
     if (type == 0) { 
         ledValue = 0;
     }
 
     if (type == 1) {
-        ledValue = 255;
+        ledValue = 1023;
     }
 
     //flashing
@@ -412,7 +423,7 @@ void ledAction(uint8_t type) {  //Type: 0 = off, 1 = on, 2 = flashing, 3 = fadin
         //On if starting from flash
         if(lastType != type) { 
             ledOn = true;
-            ledValue = 255;
+            ledValue = 1023;
             lastFlash = millis();
         }
         //flash
@@ -449,7 +460,7 @@ void ledAction(uint8_t type) {  //Type: 0 = off, 1 = on, 2 = flashing, 3 = fadin
             }            
         }
 
-        if(ledOn == true) ledValue = 255;
+        if(ledOn == true) ledValue = 1023;
         else ledValue = 0;
     }
 
@@ -459,23 +470,25 @@ void ledAction(uint8_t type) {  //Type: 0 = off, 1 = on, 2 = flashing, 3 = fadin
         //Start from last value
         if (lastType != type) { 
             lastType == 1? cosValue = 2*PI : cosValue = PI;
+            lastFlash = millis();
         }
 
         //calculate new value
         if(cosValue > 3*PI) cosValue = PI;
         cosValue += ((millis() - lastFlash)/(float)fadeTime) * PI;
-        ledValue = ((cos(cosValue) + 1) * 255) / 2;
+        ledValue = ((cos(cosValue) + 1) * 1023) / 2;
 
         lastFlash = millis();
     }
 
     // Type between 100 and 200 -> direct value
     if (type >= 100 && type <= 200) { 
-        ledValue = (type - 100)*2.55;
+        ledValue = (type - 100)*10;
     }
 
     if(lastLedValue != ledValue) { 
-        ledcWrite(0, ledValue);
+
+        ledcWrite(0, ledValue*(float(Menu1[LED_BRIGHTNESS].value)/100));
         lastLedValue = ledValue;
     }
 

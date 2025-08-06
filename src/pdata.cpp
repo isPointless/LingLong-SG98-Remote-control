@@ -38,11 +38,14 @@ void pdata_init() {
 }
 
 void pdata_read() {  //reads ALL stored settings in flash
-
+    int8_t readState;
     storedSetRPM = preferences.getShort("setRPM", default_setRPM);
     storedSetWeight = preferences.getULong("setWeight", default_setWeight);
-    state = preferences.getShort("idleState", 1); 
-    if(state == SLEEPING) state = IDLE;
+    readState = preferences.getShort("idleState", 1); 
+
+    if(readState == SLEEPING) state = IDLE;
+    if(readState == IDLE) state = IDLE;
+    if(readState == IDLE_GBW) state = IDLE_GBW;
 
     //Menu 1
     for(int i = 0; i < NUM_MENU1_ITEMS; i++) { 
@@ -119,14 +122,18 @@ void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 
         if(state == MENU1) preferences.putShort(Menu1[menu1Selected].prefUID, Menu1[menu1Selected].value);
         if(state == MENU2) preferences.putShort(Menu2[menu2Selected].prefUID, Menu2[menu2Selected].value);
         if(state == MENU3) preferences.putShort(Menu3[menu3Selected].prefUID, Menu3[menu3Selected].value);
-        //Serial.println("Stored 2");
+        #ifdef DEBUG
+            Serial.println("Stored 2");
+        #endif
     }
 
     //update set RPM or weight
     if(what == 3) {
         if(state == IDLE) preferences.putShort("setRPM", setRPM);
         if(state == IDLE_GBW) preferences.putULong("setWeight", setWeight);
-        //Serial.println("Stored 3");
+        #ifdef DEBUG
+            Serial.println("Stored 3");
+        #endif
     }
 
     //update from gbw learn

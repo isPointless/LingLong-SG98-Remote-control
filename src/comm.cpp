@@ -1,12 +1,14 @@
 #include "definitions.h"
-#ifdef JMC_DRIVE_n
-
 #include "HardwareSerial.h"
 #include "comm.h"  
 #include "main.h"
 
-#include "comm_jmc.h"
+#ifdef RT_DRIVE
+#include "motorcontrol_rt.h"
+#endif
+#ifdef JMC_DRIVE
 #include "motorcontrol_jmc.h"
+#endif
 
 unsigned long lastSend;
 unsigned long lastReceived = 0;
@@ -16,8 +18,8 @@ uint8_t response[32] = {0};
 uint16_t lastRead[20] = {0};
 bool responseReceived = 0;
 uint8_t lastRequestType = 0;
-uint16_t lastRegAddr = 0;
 uint16_t crc = 0;
+uint16_t lastRegAddr = 0;
 
 void comm_init() { 
   pinMode(RS485DE, OUTPUT);
@@ -29,26 +31,52 @@ void comm_init() {
 }
 
 bool writeConfirm(uint16_t reg_addr, uint16_t value) { 
-  while(!writeSingleRegister(reg_addr, value))
-  delay(COMM_DELAY_RECEIVE);
-  return receive();
+  while(millis() - lastSend < COMM_DELAY_SEND);
+  writeSingleRegister(reg_addr, value);
+  delay(COMM_DELAY_RECEIVE + 1);
+  bool response = false;
+  int16_t received = receive();
+  if(received == reg_addr) response = true;
+  return response;
 }
 
 bool writeMultipleConfirm(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data4) { 
-  while(!writeMultipleRegisters(reg_addr_start, reg_count, data1, data2, data3, data4))
-  delay(COMM_DELAY_RECEIVE);
-  return receive();
+  while(millis() - lastSend < COMM_DELAY_SEND);
+  writeMultipleRegisters(reg_addr_start, reg_count, data1, data2, data3, data4);
+  delay(COMM_DELAY_RECEIVE + 1);
+  bool response = false;
+  #ifdef DEBUG_COMM
+    Serial.print("received bytes: "), Serial.println(Serial2.available());
+  #endif
+  int16_t received = receive();
+  if(received == reg_addr_start) response = true;
+  return response;
 }
 
-uint16_t readReturn(uint16_t reg_addr, uint16_t reg_count) { //returns -1 if unsuccesfull, otherwise returns read value of first reg_addr
-  while(!readRegister(reg_addr, reg_count)) 
-  delay(COMM_DELAY_RECEIVE);
-  if(receive() == true) { 
+int16_t readReturn(uint16_t reg_addr, uint16_t reg_count) { //returns 0xFFFF if unsuccesfull, otherwise returns read value of first reg_addr
+  while(millis() - lastSend < COMM_DELAY_SEND);
+  readRegister(reg_addr, reg_count); //Send read request
+  #ifdef DEBUG_COMM
+    Serial.print("requesting: "), Serial.println(reg_addr);
+  #endif
+  while(millis() - lastSend < COMM_DELAY_RECEIVE);
+  if(receive() == reg_addr) { 
+    #ifdef DEBUG_COMM
+    Serial.print("Readreturn, lastRead0: "), Serial.println(lastRead[0]);
+    #endif
     return lastRead[0];
-  } else return -1;
+  } else return 0xFFFF;
 }
 
 void rs485_send(uint8_t* data, size_t length) {
+  #ifdef DEBUG_COMM
+  Serial.print("sending: ");
+    for(int i = 0; i < length; i++) { 
+      Serial.print(data[i], HEX); 
+      Serial.print(" ");
+    }
+  Serial.println("<end>");
+  #endif
   setTXmode();
   delayMicroseconds(500);
   Serial2.write(data, length);
@@ -79,113 +107,99 @@ bool writeSingleRegister(uint16_t reg_addr, uint16_t value) { //returns true whe
   return true;
 }
 
-bool writeMultipleRegisters(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data4) { //returns true when succesfully SEND
-  if(lastSend + COMM_DELAY_SEND > millis()) return false;
-  int length;
-  request[0] = SLAVE_ID;
-  request[1] = FUNC_WRITE_MULTIPLE_REGISTERS;
-  request[2] = reg_addr_start>> 8;
-  request[3] = reg_addr_start & 0xFF;
-  request[4] = reg_count>> 8;
-  request[5] = reg_count & 0xFF;
-  request[6] = uint8_t(reg_count * 2);
-  request[7] = data1 >> 8;
-  request[8] = data1 & 0xFF;
-  if(reg_count == 1) { 
-    request[9] = crc & 0xFF;
-    request[10] = crc >> 8;
-    length = 11;
-  }
-  if(reg_count == 2) { 
-    request[9] = data2 >> 8;
-    request[10] = data2 & 0xFF;
-    crc = modbus_crc16(request, 11);
-    request[11] = crc & 0xFF;
-    request[12] = crc >> 8;
-    length = 13;
-  }
-  if(reg_count == 3) { 
-    request[9] = data2 >> 8;
-    request[10] = data2 & 0xFF;
-    request[11] = data3 >> 8;
-    request[12] = data3 & 0xFF;
-    crc = modbus_crc16(request, 13);
-    request[13] = crc & 0xFF;
-    request[14] = crc >> 8;
-    length = 15;
-  }
-   if(reg_count == 4) { 
-    request[9] = data2 >> 8;
-    request[10] = data2 & 0xFF;
-    request[11] = data3 >> 8;
-    request[12] = data3 & 0xFF;
-    request[13] = data4 >> 8;
-    request[14] = data4 & 0xFF;
-    crc = modbus_crc16(request, 15);
-    request[15] = crc & 0xFF;
-    request[16] = crc >> 8;
-    length = 16;
-  }
+bool writeMultipleRegisters(uint16_t reg_addr_start, uint16_t reg_count,
+                           uint16_t data1, uint16_t data2,
+                           uint16_t data3, uint16_t data4) {
+    if (lastSend + COMM_DELAY_SEND > millis()) return false;
+    if (reg_count < 1 || reg_count > 4) return false;
 
-  while (Serial2.available()) Serial2.read();
-  rs485_send(request, length);
+    request[0] = SLAVE_ID;
+    request[1] = FUNC_WRITE_MULTIPLE_REGISTERS;
+    request[2] = reg_addr_start >> 8;
+    request[3] = reg_addr_start & 0xFF;
+    request[4] = reg_count >> 8;
+    request[5] = reg_count & 0xFF;
+    request[6] = reg_count * 2;
 
-  lastRequestType = 200 + reg_count;
-  return true;
+    uint16_t data[4] = { data1, data2, data3, data4 };
+    for (uint8_t i = 0; i < reg_count; ++i) {
+        request[7 + i * 2] = data[i] >> 8;
+        request[8 + i * 2] = data[i] & 0xFF;
+    }
+
+    uint8_t msgLen = 7 + reg_count * 2;
+    crc = modbus_crc16(request, msgLen);
+    request[msgLen]     = crc & 0xFF;
+    request[msgLen + 1] = crc >> 8;
+
+    while (Serial2.available()) Serial2.read();
+    rs485_send(request, msgLen + 2);
+
+    lastSend = millis();
+    lastRequestType = 200 + reg_count;
+    return true;
 }
 
 bool receiveError(uint8_t msgLength) {
   Serial2.readBytes(response, 5);
+
+  //DEBUG COMM
+  #ifdef DEBUG_COMM
+  Serial.println("Fault code received!");
+    Serial.print("Last req type: "), Serial.println(lastRequestType);
+    Serial.print("Message: ");
+    for(int i = 0; i < 5; i++) { 
+      Serial.print(response[i], HEX);
+      Serial.print(" ");
+    }
+    Serial.print(" < end > "), Serial.print("bytes: "), Serial.println(5);
+  #endif
+
   if(msgLength == 5 && response[1] >= 0x80 && response[1] <= 0x90) { //error frame
     uint16_t crc_resp = response[3] | (response[4] << 8);
-    if(crc_resp != modbus_crc16(response, 5)) return false;
+    if(crc_resp != modbus_crc16(response, 5)) return 0;
 
     errorCode = response[2];
     error = 3; 
-    Serial.print("error received from: ");
+    Serial.print("error received: ");
     Serial.println(errorCode);
-    commCounter--;
-    return true;
+
+    return 0x603F; //Error code cia402
   }
-  return false;
+  return 0;
 }
 
-bool receive() { 
-  if(lastSend + COMM_DELAY_RECEIVE > millis()) return false; //exit if not expecting a complete message yet, simpler than checking serial.available();
-  if(Serial2.available() == 5) receiveError(5); //If we're between received and new send (delay)
-  if(lastRequestType == 0 && Serial2.available() < 8) return false;
-  if(lastRequestType > 100 && lastRequestType < 200 && Serial2.available() < (2*(lastRequestType-100)+ 5)) return false;
-  if(lastRequestType > 200 && Serial2.available() < 8) return false;
+int16_t receive() {  // Returns 0 when nothing is read. returns the read register when succesfull receive(). 
+  if(lastSend + COMM_DELAY_RECEIVE > millis()) return 0; //exit if not expecting a complete message yet, faster and safer than checking serial.available();
 
   int len;
-  
   len = Serial2.available();
+  if(len == 5) return(receiveError(5)); //If we're between received and new send (delay)
+  if(lastRequestType == 0 && len < 8) return 0;
+  if(lastRequestType > 100 && lastRequestType < 200 && len < 5+2*(lastRequestType-100)) return 0;
+  if(lastRequestType > 200 && len < 8) return 0;
+  // READ
+  
   Serial2.readBytes(response, len);
-  if(len == 5) return receiveError(len);
+  memset(lastRead, 0, sizeof(lastRead));
 
+  //DEBUG COMM
   #ifdef DEBUG_COMM
-    Serial.println("Received bytecount: " + len);
+    Serial.print("Last req type: "), Serial.println(lastRequestType);
+    Serial.print("Message: ");
     for(int i = 0; i < len; i++) { 
       Serial.print(response[i], HEX);
       Serial.print(" ");
     }
-    Serial.println(" < end of message > ");
-    Serial.println("last req type: " + lastRequestType);
+    Serial.print(" < end > "), Serial.print("bytes: "), Serial.println(len);
   #endif
   
-  // Last comm request was a writeSingleReg
+  // >>>>>>>>>>>> Last comm request was a writeSingleReg
   if(lastRequestType == 0) { 
-    if (len < 8) {
-      #ifdef DEBUG_COMM
-        Serial.println("Response timeout or incomplete");
-      #endif
-      return false;
-    }
-
     uint16_t crc_resp = response[6] | (response[7] << 8);
     if (modbus_crc16(response, 6) != crc_resp) {
       #ifdef DEBUG_COMM
-        Serial.println("CRC check failed");
+        Serial.println("CRC check failed0");
       #endif
       return false;
     } else { 
@@ -197,7 +211,8 @@ bool receive() {
 
     if(crc == crc_resp) { //SEND CRC matches received -> messages match -> Succes!
       commCounter--;
-      return true;
+      lastRead[0] = (response[4] << 8) | response[5];
+      return (response[2] << 8) | response[3];
     };
 
     #ifdef DEBUG_COMM
@@ -206,16 +221,16 @@ bool receive() {
     return false;
   }
 
-  // Last send type was a data request (101 = 1 register)
+  // >>>>>>>>>>>> Last send type was a data request (101 = 1 register)
   if (lastRequestType > 100 && lastRequestType < 200) {  
 
     // Validate CRC
     uint16_t crc_resp = response[len - 2] | (response[len - 1] << 8);
     if (modbus_crc16(response, len - 2) != crc_resp) {
       #ifdef DEBUG_COMM
-        Serial.println("Error: CRC failed");
+        Serial.println("CRC failed 100+");
       #endif
-      return false;
+      return 0;
     }
 
     // VALIDATE MSG 
@@ -226,7 +241,7 @@ bool receive() {
         Serial.print("Error: FUNCTION CODE");
         Serial.println(response[1], HEX);
       #endif
-      return false;
+      return 0;
     }
 
     // SAVE DATA FROM RESPONSE
@@ -243,23 +258,16 @@ bool receive() {
       #endif
     }
     commCounter--;
-    return true;
+    return lastRegAddr;
   }
 
-  //receive multiplewrites
+  //  >>>>>>>>>>>> receive multiplewrites
   if(lastRequestType > 200) { 
-    if (len < 8) {
-      #ifdef DEBUG_COMM
-        Serial.println("200: No or incomplete response");
-      #endif
-      return false;
-    }
-
     // Validate CRC
     uint16_t crc_resp = response[len - 2] | (response[len - 1] << 8);
     if (modbus_crc16(response, len - 2) != crc_resp) {
       #ifdef DEBUG_COMM
-        Serial.println("Error: CRC failed");
+        Serial.println("Error: CRC failed>200");
       #endif
       return false;
     } else {
@@ -280,30 +288,19 @@ bool receive() {
       return false;
     }
 
+    // VALIDATE REG ADDR
     if(response[2] == request[2]) { 
       commCounter--;
-      return true;
-    }
-    else { 
-        Serial.println("Response != request");
+      return (response[2] << 8) | response[3];
+    } else {
         #ifdef DEBUG_COMM
-          Serial.print("ERROR! Request 2: ");
-          Serial.print(request[2], HEX);
-          ;Serial.print(" Response 2: ");
-          Serial.println(response[2], HEX);
-          Serial.print("ERROR! Request 3: "); 
-          Serial.print(request[3], HEX); 
-          Serial.print(" Response 3: ");
-          Serial.println(response[3], HEX);
-          Serial.print("ERROR! Request 5: ");
-          Serial.print(request[5], HEX); 
-          Serial.print(" Response 5: ");
-          Serial.println(response[5], HEX);
+          Serial.println("Response != request");
+          Serial.print("Reg Requested: "), Serial.print(lastRegAddr), Serial.print("Reg Received: "), Serial.println((response[2] << 8) | response[3]);
       #endif
     }
-    return false;
+    return 0;
   }
-  return false;
+  return 0;
 }
 
 bool readRegister(uint16_t reg_addr, uint16_t reg_count) { //returns true when succesfully SEND
@@ -344,6 +341,3 @@ uint16_t modbus_crc16(uint8_t* buf, int len) {
   }
   return crc;
 }
-
-
-#endif

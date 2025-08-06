@@ -2,13 +2,19 @@
 #include <Arduino.h>
 #pragma once
 
-//DEBUG FLAGS
+// CHOOSE ONE
+#define RT_DRIVE
+// #define JMC_DRIVE 
+
+//DEBUG FLAGS 
+// #define DEBUG
 #define DEBUG_SCALE false
 // #define DEBUG_COMM
+// #define DEBUG_MOTORCONTROL
 // #define DEBUG_CALIB
 // #define DEBUG_GBW
 
-//#define BUILD_ID __DATE__ __TIME__
+//#define BUILD_ID (new build ID = resets all saved params)
 #define BUILD_ID "0002"
 
 // USER SETTINGS
@@ -17,8 +23,7 @@
 #define rpm_scalar 25
 #define SIZEOFCALIBRATEARRAY (2*(absolute_max_rpm - absolute_min_rpm)/rpm_scalar) // 2 * (ABSOLUTE_MIN_RPM - ABSOLUTE_MAX_RPM) / RPM_SCALAR
 #define LONGPRESS 500 //after Xms a long press is registered
-#define RT_DRIVE
-// #define JMC_DRIVE
+#define DISP_REFRESH_RATE 50 //Hz
 
 // COMM PINS
 #define RS485_RXD 18 
@@ -74,7 +79,7 @@
 #define ENC_TOL 1
 
 //led behaviour
-#define fadeTime 1750
+#define fadeTime 2500
 #define flashTime 250
 #define fastFlashTime 150
 #define fastestFlashTime 75
@@ -87,6 +92,7 @@
 #define default_maxRPM 2500
 #define default_minRPM 100
 #define default_motor_torque 1040
+#define default_led_brightness 100
 
 #define default_setWeight 18000
 #define default_max_weight 99900
@@ -98,16 +104,16 @@
 #define default_start_delay 200
 #define default_time_offset 300
 
-
 #define default_autoPurgeEnabled 1
 #define default_buttonPurge 1
 #define default_autoPurgeEnabled 1
 #define default_purgeFramesLow 5
 #define default_purgeFramesHigh 3
-#define default_purgePrctLow 120
-#define default_purgePrctHigh 120
+#define default_purgePrctLow 125
+#define default_purgePrctHigh 125
 #define default_purgeDuration 3000
 #define default_purgeDelay 2000
 #define default_purgeForwardRPM 2000
 #define default_reverseRotation 0
 #define default_purgeStabilTime 500
+#define default_purge_off_time 1000

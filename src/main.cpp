@@ -6,22 +6,16 @@
 #include "pdata.h"
 #include "display.h"
 #include "io.h"
-
-
-
-#define DEBUG_CALIBRATE
+#include "comm.h"
 
 #ifdef RT_DRIVE 
-#include "comm_rt.h"
 #include "motorcontrol_rt.h"
 #endif 
 #ifdef JMC_DRIVE
-#include "comm_jmc.h"
 #include "motorcontrol_jmc.h"
 #endif
 
-uint8_t state = IDLE;
-SYSTEM_STATUS commStatus = DISCONNECTED;
+States state = IDLE;
 int8_t menu1Selected = EXITMENU;
 int8_t menu2Selected = RETURN_FROM_PURGE;
 int8_t menu3Selected = RETURN_FROM_GBW;
@@ -37,7 +31,9 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM"}, //5
     {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM"}, //6
     {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT"}, //7
-    {"Motor torque %", default_motor_torque, 1, 3000, 10, "MOTORTORQ"},
+    {"Motor torque 0.1%", default_motor_torque, 0, 3000, 10, "MOTORTORQ"},
+    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT"},
+    {"Invert scrolling", 0, 0, 1, 1, "SCROLL"},
 };
 menuEntry Menu2[NUM_MENU2_ITEMS] = { 
     {"BACK", 0, 0, 0, 0, "RETURN2"}, //0
@@ -52,6 +48,7 @@ menuEntry Menu2[NUM_MENU2_ITEMS] = {
     {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE"}, //9
     {"Purge stabilize time", default_purgeStabilTime, 100, 5000, 50, "PURGESTABILT" }, //10
     {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "PURGEFWRPM" }, //11
+    {"Purge 0rpm time", default_purge_off_time, 0, 5000, 10, "PURGEOFFT"},
 };
 
 menuEntry Menu3[NUM_MENU3_ITEMS] = { 
@@ -80,14 +77,17 @@ RTC_DATA_ATTR uint16_t rtc_setRPM;
 
 bool ready_purge = false;
 
+unsigned long lastLoopTime = 0;
+int loopcount = 0;
+
+
 void scaleTask(void *pvParameters) {
     scales_init(); // Run once at task start
 
-    if (scaleMutex == NULL) {
-        Serial.println("Failed to create scaleMutex!");
-        // handle error (optional)
-    }
-
+    // if (scaleMutex == NULL) {
+    //     Serial.println("Failed to create scaleMutex!");
+    //     error = 5;
+    // }
     while (1) {
         gbwVitals();
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -99,6 +99,7 @@ void setup() {
     scaleMutex = xSemaphoreCreateMutex();
     if (scaleMutex == NULL) {
         Serial.println("Failed to create mutex!");
+        error = 5;
     }
     delay(2000);
     
@@ -154,12 +155,14 @@ void loop() {
     do_io();
     sleepTimeCheck();
     update_display();
+    
 
     if(state == SLEEPING){ 
         esp_task_wdt_deinit();
         ledAction(0);
         motorOff();
         display_off();
+        motorSleep();
         sleep_init();
     }
     
@@ -174,7 +177,6 @@ void loop() {
 
     if(state == GRINDING)
     { 
-        motor_setRPM = setRPM;
         checkPurge();
         //lastActivity = millis();
     }
@@ -226,14 +228,18 @@ void checkPurge() {
     static int16_t test_scalar;
     static int16_t purge_frames;
 
-    //if last call was +200ms ago, reset.
-    if(lastCall + 200 < millis()) { 
+    //if last call was +1000ms ago, reset.
+    if(lastCall + 1000 < millis()) { 
         lastCall = millis();
         startTime = millis();
         ready_purge = false;
         frameCounter = 0;
     }
 
+    if(commStatus != COMM_CONNECTED) { 
+        state = IDLE;
+        motor_setRPM = 0;
+    } else motor_setRPM = setRPM;
 
     //Reset if the RPM is changed
     if(setRPM != last_setRPM) {
@@ -254,8 +260,9 @@ void checkPurge() {
     //the torque defined during calibration
     
       if(rpm_scalar != 0) test_torque = calibrateArray[((setRPM + absolute_min_rpm)/rpm_scalar)];
+      #ifdef DEBUG_CALIB
         Serial.print("torque: "), Serial.print(motor_currentTorque), Serial.print(" test: "), Serial.println(test_torque);
-
+      #endif
       if(setRPM > 500) { //High values
         test_scalar = Menu2[SETPURGEPRCTHIGH].value;
         purge_frames = Menu2[SETPURGEFRAMESHIGH].value;
@@ -267,7 +274,7 @@ void checkPurge() {
       ///if the actual torque is greater than the calibrated torque*scalar we count up frames (note only when newData = true)
       if(motor_currentTorque > (test_torque*test_scalar)/100.f) { 
         frameCounter++;
-        #ifdef DEBUG_CALIBRATE
+        #ifdef DEBUG_CALIB
           Serial.print("frame counter: "), Serial.println(frameCounter);
         #endif
       } else {  //If it's smaller, we set the frames to 0;
@@ -284,7 +291,7 @@ void checkPurge() {
       //If the frames have gone to 0; we are no longer grinding -> after purgedelay(7) we will commense the purge
       if(ready_purge == true && (lastActivity + Menu2[SETPURGEDELAY].value) < millis()) 
       { 
-        #ifdef DEBUG_CALIBRATE
+        #ifdef DEBUG_CALIB
         Serial.println("go purge");
         #endif
         disp_updateRequired = true;
@@ -301,7 +308,7 @@ void do_purge() {
     static unsigned long startTime;
     static uint8_t phase;
     static uint8_t last_purge_phase; 
-    const uint16_t delayTime = 1000;
+    uint16_t delayTime = Menu2[SETPURGEOFFTIME].value;
 
     // if its the first call in a while..
     if(lastCall + 200 < millis()) { 
@@ -309,21 +316,24 @@ void do_purge() {
         startTime = millis(); 
         phase = 0;
         last_purge_phase = 0xFF;
-        Serial.println("Purge commence..");
-    }
-    
-    //started <500ms ago
-    if(startTime + delayTime > millis()) { 
-        motor_setRPM = 0; 
-        phase = 1; 
+        #ifdef DEBUG
+            Serial.println("Purge commence..");
+        #endif
         if(Menu2[SETPURGERPM].value == 0 && Menu2[SETPURGEREVERSE].value == 0) state = IDLE;
     }
+    
+    //started <delayTime ago
+    if(startTime + delayTime > millis()) { 
+        if(delayTime > 0) motor_setRPM = 0; 
+        phase = 1; 
+    }
 
-    // Time between 500 and 500 + purgeTime 
+    // Time between delayTime and 500 + purgeTime 
     if(startTime + delayTime < millis() && startTime + delayTime + Menu2[SETPURGETIME].value > millis()) {
         motor_setRPM = Menu2[SETPURGERPM].value; 
         phase = 2;
     }
+
     //We're not doing reverse
     if(Menu2[SETPURGEREVERSE].value == false && startTime + delayTime + Menu2[SETPURGETIME].value < millis()) {
         motor_setRPM = 0;
@@ -367,10 +377,10 @@ void vitals_init() {
 
 
 void sleep_init() { 
+    delay(100); //Allow shit to pass
     digitalWrite(RS485RE, HIGH); // Low power state
     digitalWrite(RS485DE, LOW); 
     digitalWrite(DISP_BL, LOW);
-
     delay(1);
 
     // Set BTN as input with pullup
@@ -384,7 +394,7 @@ void sleep_init() {
     rtc_gpio_hold_en((gpio_num_t)DISP_BL);
 
 
-    rtc_gpio_hold_dis((gpio_num_t)BTN); // Release hold just in case
+    rtc_gpio_hold_dis((gpio_num_t)BTN); // Release hold just in case for wake btn
     rtc_gpio_init((gpio_num_t)BTN);
     rtc_gpio_set_direction((gpio_num_t)BTN, RTC_GPIO_MODE_INPUT_ONLY);
     rtc_gpio_pullup_en((gpio_num_t)BTN);
@@ -392,8 +402,10 @@ void sleep_init() {
     // Configure EXT0 wakeup on BTN (GPIO 4), wake on LOW level (button press)
     esp_sleep_enable_ext0_wakeup(WAKE_BTN, 0); // 0 = wake on LOW
 
-    Serial.println("Entering deep sleep, waiting for BTN press to wake up...");
-    Serial.print("BTN: "); Serial.println(digitalRead(BTN));
+    #ifdef DEBUG
+        Serial.println("Entering deep sleep, waiting for BTN press to wake up...");
+        Serial.print("BTN: "); Serial.println(digitalRead(BTN));
+    #endif
 
     // Flush serial before sleeping
     Serial.flush();
@@ -416,6 +428,18 @@ void sleep_release() {
 
 void doVitals() { 
     esp_task_wdt_reset();
+
+    #ifdef DEBUG
+    unsigned long currentMicros = micros(); // or use millis() for ms accuracy
+    unsigned long looptime = currentMicros - lastLoopTime;
+    lastLoopTime = currentMicros;
+
+    if(looptime > 500) {
+        Serial.print("Loop time: ");
+        Serial.print(looptime);
+        Serial.println(" us");
+    }
+    #endif
 }
 
 
@@ -424,8 +448,9 @@ void sleepTimeCheck() {
 
     if(lastActivity + (Menu1[SETSLEEP].value * 60000) < millis() && millis() > (Menu1[SETSLEEP].value * 60000)) { 
         rtc_state = state; // save last state
-        Serial.println(Menu1[SETSLEEP].value * 60000);
         state = SLEEPING;
-        Serial.println("sleep!");
+        #ifdef DEBUG
+            Serial.println("sleep!");
+        #endif
     }
 }

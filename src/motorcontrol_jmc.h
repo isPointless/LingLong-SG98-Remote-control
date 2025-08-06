@@ -1,5 +1,5 @@
 #include "definitions.h"
-#ifdef RT_DRIVE
+#ifdef JMC_DRIVE
 
 #ifndef MOTORCONTROL_H
 #define MOTORCONTROL_H

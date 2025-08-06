@@ -1,9 +1,9 @@
 #include "definitions.h"
 
-#define BAUD_RATE 9600 //default for RT
-#define PARITY SERIAL_8N1 //default for RT
-
 #ifndef comm_h
+
+#define BAUD_RATE 9600 //default for LL
+#define PARITY SERIAL_8N1 //default for LL
 
 #define comm_h
 #define SLAVE_ID 0x01
@@ -14,18 +14,22 @@
 void comm_init(); //init RS485 communication
 
 bool writeConfirm(uint16_t reg_addr, uint16_t value);
-uint16_t readReturn(uint16_t reg_addr, uint16_t reg_count);
+int16_t readReturn(uint16_t reg_addr, uint16_t reg_count);
 bool writeMultipleConfirm(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2=0, uint16_t data3=0, uint16_t data4=0);
 
 bool writeSingleRegister(uint16_t reg_addr, uint16_t value);
 bool writeMultipleRegisters(uint16_t reg_addr_start, uint16_t reg_count, uint16_t data1, uint16_t data2=0xFF, uint16_t data3=0xFF, uint16_t data4=0xFF);
 bool readRegister(uint16_t reg_addr, uint16_t reg_count);
 
-extern bool receive(); 
+void rs485_poll();
+
+extern int16_t receive(); 
 extern uint16_t lastRead[]; 
 extern uint8_t lastRequestType; //0 = writeSingle, 101 = readSingleRegister, 102 = read two registers etc, 201 writeMultiperRg(1pc), 202 writeMultipleReg(2pcs)
 extern uint16_t errorCode; 
 extern unsigned long lastReceived; //used for connection states;
+extern uint16_t lastRegAddr;
+extern bool rs485Sending;
 
 
 uint16_t modbus_crc16(uint8_t* buf, int length);
