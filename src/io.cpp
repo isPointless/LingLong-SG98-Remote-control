@@ -270,7 +270,7 @@ void do_io() {
     if(state == MENU3) { 
         ledAction(0);
         //Encoder routes
-        if(enterMenu == false) Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
+        if(enterMenu == false) menu3Selected += Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
         if(menu3Selected > NUM_MENU3_ITEMS - 1) menu3Selected = 0;
         if(menu3Selected < 0) menu3Selected = NUM_MENU3_ITEMS - 1;
 

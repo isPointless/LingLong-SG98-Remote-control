@@ -31,9 +31,9 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM"}, //5
     {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM"}, //6
     {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT"}, //7
-    {"Motor torque 0.1%", default_motor_torque, 0, 3000, 10, "MOTORTORQ"},
-    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT"},
-    {"Invert scrolling", 0, 0, 1, 1, "SCROLL"},
+    {"Motor torque 0.1%", default_motor_torque, 0, 3000, 10, "MOTORTORQ"}, //8 
+    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT"},//9
+    {"Invert scrolling", 0, 0, 1, 1, "SCROLL"}, //10
 };
 menuEntry Menu2[NUM_MENU2_ITEMS] = { 
     {"BACK", 0, 0, 0, 0, "RETURN2"}, //0
