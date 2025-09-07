@@ -174,26 +174,30 @@ int16_t receive() {  // Returns 0 when nothing is read. returns the read registe
 
   int len;
   len = Serial2.available();
+
+  Serial2.readBytes(response, len);
+  memset(lastRead, 0, sizeof(lastRead));
+
+  //DEBUG COMM
+  #ifdef DEBUG_COMM
+    if(len > 2) {
+      Serial.print("Last req type: "), Serial.println(lastRequestType);
+      Serial.print("Message: ");
+      for(int i = 0; i < len; i++) { 
+        Serial.print(response[i], HEX);
+        Serial.print(" ");
+      }
+      Serial.print(" < end > "), Serial.print("bytes: "), Serial.println(len);
+    }
+  #endif
+
   if(len == 5) return(receiveError(5)); //If we're between received and new send (delay)
   if(lastRequestType == 0 && len < 8) return 0;
   if(lastRequestType > 100 && lastRequestType < 200 && len < 5+2*(lastRequestType-100)) return 0;
   if(lastRequestType > 200 && len < 8) return 0;
   // READ
   
-  Serial2.readBytes(response, len);
-  memset(lastRead, 0, sizeof(lastRead));
 
-  //DEBUG COMM
-  #ifdef DEBUG_COMM
-    Serial.print("Last req type: "), Serial.println(lastRequestType);
-    Serial.print("Message: ");
-    for(int i = 0; i < len; i++) { 
-      Serial.print(response[i], HEX);
-      Serial.print(" ");
-    }
-    Serial.print(" < end > "), Serial.print("bytes: "), Serial.println(len);
-  #endif
-  
   // >>>>>>>>>>>> Last comm request was a writeSingleReg
   if(lastRequestType == 0) { 
     uint16_t crc_resp = response[6] | (response[7] << 8);

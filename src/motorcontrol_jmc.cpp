@@ -24,12 +24,15 @@ int16_t calibrateArray[SIZEOFCALIBRATEARRAY] = {0};
 int16_t reg_6040 = -1; //Control word
 int16_t reg_6060 = -1; //Operation mode.. 3=speed+torque
 int16_t reg_6000 = -1; //Prob some comm flag or error reset
-int16_t reg_6072 = -1; //max torque probably!
+int16_t reg_6072 = -1;
+int16_t reg_6073 = -1;
 int16_t reg_6081 = -1; //RPM
-int16_t reg_6082 = -1; //No idea..?
+int16_t reg_6082 = -1; // 0 = forward -- 0xFFFF = backwards
 
-int16_t pending_reg_6081 = 0xFFFF;
-int16_t pending_reg_6082 = 0xFFFF;
+int16_t pending_reg_6081 = 100;
+int16_t pending_reg_6082 = 100;
+int16_t pending_reg_6072 = 100; 
+int16_t pending_reg_6073 = 100; 
 
 enum DriveStatus{
     SWITCH_ON_DISABLED,
@@ -83,47 +86,45 @@ void motor_init() {
   motor_setRPM = 0;
   reg_6040 = -1; //Control word
   reg_6060 = -1; //Operation mode.. 3=speed+torque
-  reg_6000 = -1; //Prob some comm flag or error reset
-  reg_6072 = -1; //max torque probably!
+  reg_6000 = -1; //INT32 LSB FIRST set
+  reg_6072 = -1; //target torque //UNUSED CANNOT BE ACCESSED
   reg_6081 = -1; //RPM
   reg_6082 = -1; //No idea..?
   commStatus = COMM_DISCONNECTED;
   currentStatus = MOTOR_NOT_CONNECTED;
 }
 
-// bool motor_param_set() { 
-//   int score = 0;
-//   if(writeConfirm(0x6072, 1000)) score++;
-//   if(writeConfirm())
-// }
-
 bool do_comm() { // can be called continously and will update all values. Returns true when new data packet is available.
     /* COMM TYPES
     0 = send RPM
-    1+ = READ STATUS, RPM, TORQUE (1300, 1301, 1302, 1303)
+    1 = read status word 0x6041
+    2+ = READ STATUS, RPM, TORQUE (1300, 1301, 1302, 1303)
     */
   static unsigned long lastCommSend;
   static unsigned long lastCommReceived;
   // static uint8_t lastCommType;
   static uint8_t nextCommType;
-  static int16_t motor_lastSetRPM;
+  static int16_t motor_lastSetRPM = -1;
 
   //Disconnect flow
   if(lastCommReceived + 2*COMM_DELAY_IDLE < millis() && lastCommReceived > 0) { 
     #ifndef DEBUG
       error = 2;
     #endif
+
+    #ifdef DEBUG_MOTORCONTROL
+      Serial.print("Have not received a message for: "), Serial.print(millis()-lastCommReceived), Serial.println("ms -> DISCONNECTED");
+    #endif
     commStatus = COMM_DISCONNECTED;
     currentStatus = MOTOR_NOT_CONNECTED;
     disp_updateRequired = true;
+
     reg_6040 = -1; //Control word
     reg_6060 = -1; //Operation mode.. 3=speed+torque
     reg_6000 = -1; //Prob some comm flag or error reset
-    reg_6072 = -1; //max torque probably!
-    reg_6081 = -1; //RPM
-    reg_6082 = -1; //No idea..?
+    reg_6072 = -1;
   }
-
+//Cannot establish connection 
   if(lastCommReceived == 0 && commStatus == COMM_DISCONNECTED && millis() > 10000) { 
     #ifndef DEBUG
       error = 1;
@@ -140,24 +141,22 @@ bool do_comm() { // can be called continously and will update all values. Return
     disp_updateRequired = true;
   }
 
-  // Motor stall flow
-  int16_t torquePercent = (1000 * motor_currentTorque / Menu1[SETMOTORTORQUE].value); //A value 
-  if(motor_setRPM != 0 && torquePercent > 90 && abs(motor_currentRPM) < rpm_scalar) { 
-    motor_setRPM = 0;
-    state = IDLE; 
-    error = 6;
-  }
+  // // Motor stall flow
+  // if(motor_currentTorque > (Menu1[SETMOTORTORQUE].value/10)) { 
+  //   motor_setRPM = 0;
+  //   state = IDLE; 
+  //   error = 6;
+  // }
 
   // First communication when disconnected
   if(commStatus == COMM_DISCONNECTED) { 
-    if(writeConfirm(0x6040, 1)) {
+    if(writeConfirm(0x6040, 1)) { //This is blocking
       #ifdef DEBUG_MOTORCONTROL
         Serial.println("We're connected!");
       #endif
       reg_6040 = 1;
       reg_6060 = -1; //Operation mode.. 1 = speed
-      reg_6000 = -1; //Prob some comm flag or error reset
-      reg_6072 = -1; //max torque (uint)
+      reg_6000 = -1; //INT32 LSB first
       reg_6081 = -1; //RPM (uint 32) high word
       reg_6082 = -1; //low word RPM, never anything but 0 when not going over 16k rpm 
       lastCommReceived = millis();
@@ -176,6 +175,7 @@ bool do_comm() { // can be called continously and will update all values. Return
       if(writeConfirm(0x6040, 3)) { 
         reg_6040 = 3;
       }
+      lastCommSend = millis();
     }
     motor_lastSetRPM = motor_setRPM;
     nextCommType = 0;
@@ -185,10 +185,23 @@ bool do_comm() { // can be called continously and will update all values. Return
   // >>>>>>>> RECEIVE <<<<<<<< 
   int16_t received = receive();
   if(received > 0) {
+
+    // STATUS UPDATING
+    commStatus = COMM_CONNECTED;
+    if(currentStatus == MOTOR_NOT_CONNECTED) currentStatus = MOTOR_NOT_READY;
+    lastCommReceived = millis(); 
+
     #ifdef DEBUG_MOTORCONTROL
       Serial.print("received!: "), Serial.println(received);
       Serial.print("Commcounter: "), Serial.println(commCounter);
-      Serial.print("next comm type: "), Serial.println(nextCommType); 
+      Serial.print("next comm type: "), Serial.println(nextCommType);
+
+      if(lastRequestType == 0 || lastRequestType > 200) {
+        Serial.println("received write succesfull!");
+        Serial.print("Addr: "), Serial.print(received, HEX); 
+        if(lastRequestType == 0) { Serial.print(" value: "), Serial.println(lastRead[0]); } 
+        else { Serial.println(""); } 
+      }
     #endif
     // ERROR HANDLING 
     if(error == 2 || error == 1) { 
@@ -196,57 +209,55 @@ bool do_comm() { // can be called continously and will update all values. Return
       disp_updateRequired = true;
     }
 
-    // DEBUG 
-    #ifdef DEBUG_MOTORCONTROL
-      if(lastRequestType == 0 || lastRequestType > 200) {
-        Serial.println("received succesfull!");
-        Serial.print("reg 0x6040: "), Serial.println(reg_6040);
-        Serial.print("reg 0x6060: "), Serial.println(reg_6060);
-        Serial.print("reg 0x6072: "), Serial.println(reg_6072);
-        Serial.print("reg 0x6081: "), Serial.println(reg_6081);
-        Serial.print("reg 0x6082: "), Serial.println(reg_6082);
-      }
-    #endif
-
-    // STATUS UPDATING
-    commStatus = COMM_CONNECTED;
-    if(currentStatus == MOTOR_NOT_CONNECTED) currentStatus = MOTOR_NOT_READY;
-    lastCommReceived = millis(); 
-
     // >>>>>> SEND SINGLE WRITE
     if(lastRequestType == 0) {  
       switch(received) {
-        case 0x6040: reg_6040 = lastRead[0];
-        case 0x6060: reg_6060 = lastRead[0];
-        case 0x6072: reg_6072 = lastRead[0];
-        case 0x6081: reg_6081 = lastRead[0];
-        case 0x6082: reg_6082 = lastRead[0];
+        case 0x6000: { reg_6000 = lastRead[0]; break; }
+        case 0x6040: { reg_6040 = lastRead[0]; break; } 
+        case 0x6060: { reg_6060 = lastRead[0]; break; } 
+        case 0x6081: { reg_6081 = lastRead[0]; break; }
+        case 0x6082: { reg_6082 = lastRead[0]; break; }
+        default: break;
       }
     }
 
     // >>>>> DATA REQUESTS
     if(lastRequestType > 100 && lastRequestType < 200) { 
-      newData = true;
-      #ifdef DEBUG_MOTORCONTROL
-        Serial.println("Newdata!");
+      #ifdef DEBUG_MOTORCONTROL 
+        #ifndef DEBUG_COMM
+        Serial.println("Newdata from read!");
+        Serial.print("Addr: "), Serial.print(received, HEX), Serial.print(" value: "), Serial.println(lastRead[0]);
+        if(received > 101) Serial.print("Addr: "), Serial.print(received+1, HEX), Serial.print(" value: "), Serial.println(lastRead[1]);
+        if(received > 102) Serial.print("Addr: "), Serial.print(received+2, HEX), Serial.print(" value: "), Serial.println(lastRead[2]);  
+        if(received > 103) Serial.print("Addr: "), Serial.print(received+3, HEX), Serial.print(" value: "), Serial.println(lastRead[3]);   
+        #endif      
       #endif
-      if(received == 0x606C && lastRequestType == 101) { // A request for status, speed & torque
+
+      if(received == 0x606C && lastRequestType == 101) {
           motor_currentRPM = int16_t(lastRead[0] | (lastRead[1] << 8));
+          disp_updateRequired = true;
       }
       if(received == 0x6077) { 
         motor_currentTorque = lastRead[0];
+        newData = true;
       }
-      if(received == 6041) { 
+
+      if(received == 0x6041) { 
         currentStatus = changeToStatus(decodeStatusWord(lastRead[0]));
+        disp_updateRequired = true;
       }
     }
 
     // >>>>> Send multiple writes
     if(lastRequestType > 200 && lastRequestType < 205) { //A SEND of max 4 writes
-      if(received == 0x6081 && lastRequestType == 202) { 
+      if(received == 0x6081) { 
         reg_6081 = pending_reg_6081;
         reg_6082 = pending_reg_6082;
       }
+      // if(received == 0x6072 && lastRequestType == 202) { 
+      //   reg_6072 = pending_reg_6072;
+      //   reg_6073 = pending_reg_6073;
+      // }
     } 
 
     return true;
@@ -261,21 +272,23 @@ bool do_comm() { // can be called continously and will update all values. Return
     if (state == IDLE || state == IDLE_GBW || state == MENU1 || state == MENU2 || state == MENU3) delay = COMM_DELAY_IDLE;
     else delay = COMMINTERVAL;
   }
-
   if(lastCommSend + delay > millis()) return false;
+
 
 // >>>>>> MOTOR OFF <<<<<<<<
 if(motor_setRPM == 0) { 
     if(reg_6040 != 3) { 
-      if(writeSingleRegister(0x6040, 3)) { //SET CONTROL TO READY (NOT ENABLED)
+      if(writeSingleRegister(0x6040, 3)) { //SET CONTROL TO READY / not enabled
         lastCommSend = millis();
         nextCommType = 0;
         motor_lastSetRPM = motor_setRPM;
         return false;
       }
     }
+
+    // Set only once
     if(reg_6060 != 3) { 
-      if(writeSingleRegister(6060, 1)) { //SET MODE TO SPEED/TORQUE
+      if(writeSingleRegister(0x6060, 3)) { //Set mode to SPEED
         lastCommSend = millis();
         nextCommType = 0;
         motor_lastSetRPM = motor_setRPM;
@@ -283,8 +296,8 @@ if(motor_setRPM == 0) {
       }
     }
 
-    if(reg_6072 != Menu1[SETMOTORTORQUE].value) { 
-      if(writeSingleRegister(0x6072, Menu1[SETMOTORTORQUE].value)) {//MOTOR TORQUE SET
+    if(reg_6000 != 1 && reg_6060 == 3) { 
+      if(writeSingleRegister(0x6000, 1)) { //Set INT32 LSB first
         lastCommSend = millis(); 
         nextCommType = 0;
         motor_lastSetRPM = motor_setRPM;
@@ -292,9 +305,23 @@ if(motor_setRPM == 0) {
       }
     }
 
-    if(reg_6000 != 1) { 
-      if(writeSingleRegister(0x6000, 1)) { //Some random comm message i dont understand
+    // if(reg_6072 != 100 && reg_6060 == 3 && reg_6000 == 1) { 
+    //   if(writeMultipleRegisters(0x6072, 2, 100, 100)) { //Max torque set
+    //     lastCommSend = millis(); 
+    //     pending_reg_6072 = 100;
+    //     pending_reg_6073 = 100;
+    //     nextCommType = 0;
+    //     motor_lastSetRPM = motor_setRPM;
+    //     return false;
+    //   }
+    // }
+    // up to here
+
+    if(reg_6081 != motor_setRPM || reg_6082 != 0) { 
+      if(writeMultipleRegisters(0x6081, 4, motor_setRPM, 0, Menu1[MOTOR_RAMP].value, Menu1[MOTOR_RAMP].value)) { // Set rotation speed, this is actually a 32 bit value, but the second value is always 0 unless rpm > 16bit int.
         lastCommSend = millis(); 
+        pending_reg_6081 = motor_setRPM;
+        pending_reg_6082 = 0;
         nextCommType = 0;
         motor_lastSetRPM = motor_setRPM;
         return false;
@@ -302,7 +329,7 @@ if(motor_setRPM == 0) {
     }
     
     // Check if we've done all commands.
-    if(reg_6040 == 3 && reg_6060 == 3 && reg_6000 == 1 && reg_6072 == Menu1[SETMOTORTORQUE].value) { 
+    if(reg_6040 == 3 && reg_6060 == 3 && reg_6000 == 1) { 
       if(nextCommType == 0) nextCommType = 1;
     }
 }
@@ -320,15 +347,6 @@ if(motor_setRPM == 0) {
       }
     }
 
-    if(reg_6072 != Menu1[SETMOTORTORQUE].value) { 
-      if(writeSingleRegister(0x6072, Menu1[SETMOTORTORQUE].value)) {// MOTOR TORQUE SET
-        lastCommSend = millis(); 
-        nextCommType = 0;
-        motor_lastSetRPM = motor_setRPM;
-        return false;
-      }
-    }
-
     if(reg_6040 != 0x0F) { 
       if(writeSingleRegister(0x6040, 0x0F)) { //SERVO ENABLE
         lastCommSend = millis();
@@ -337,32 +355,26 @@ if(motor_setRPM == 0) {
         return false;
       }
     }
+
     //Check if we've done all commands
-    if(reg_6040 == 0x0F && reg_6072 == Menu1[SETMOTORTORQUE].value && reg_6081 == motor_setRPM && reg_6082 == 0) { 
+    if(reg_6040 == 0x0F && reg_6081 == motor_setRPM && reg_6082 == 0) { 
       if(nextCommType == 0) nextCommType = 1; 
     }
   }
   
   // >>>>>>>>> REVERSE ROTATION <<<<<<<<<
   if(motor_setRPM < 0) { 
-    if(reg_6081 != -motor_setRPM || reg_6082 != 0) { 
-      if(writeMultipleRegisters(0x6081, 2, -motor_setRPM, 0)) { // Set rotation speed
+    if(reg_6081 != motor_setRPM || reg_6082 != -1) { 
+      if(writeMultipleRegisters(0x6081, 2, motor_setRPM, -1)) { // Set rotation speed
         lastCommSend = millis(); 
-        pending_reg_6081 = -motor_setRPM;
-        pending_reg_6082 = 1;
+        pending_reg_6081 = motor_setRPM;
+        pending_reg_6082 = -1;
         nextCommType = 0;
         motor_lastSetRPM = motor_setRPM;
         return false;
       }
     }
-    if(reg_6072 != Menu1[SETMOTORTORQUE].value) { 
-      if(writeSingleRegister(0x6072, Menu1[SETMOTORTORQUE].value)) {// MOTOR TORQUE SET
-        lastCommSend = millis(); 
-        nextCommType = 0;
-        motor_lastSetRPM = motor_setRPM;
-        return false;
-      }
-    }
+
     if(reg_6040 != 0x0F) { 
       if(writeSingleRegister(0x6040, 0x0F)) { //SERVO ENABLE
         lastCommSend = millis();
@@ -373,11 +385,10 @@ if(motor_setRPM == 0) {
     }
 
     //Check if we've done all commands
-    if(reg_6040 == 0x0F && reg_6072 == Menu1[SETMOTORTORQUE].value && reg_6081 == -motor_setRPM && reg_6082 == 1) { 
+    if(reg_6040 == 0x0F && reg_6081 == motor_setRPM && reg_6082 == -1) { 
       if(nextCommType == 0) nextCommType = 1; 
     }
   }
-
   //VERIFY PARAMETER SET (DEBUG ONLY)
   #ifdef DEBUG_MOTORCONTROL
 
@@ -385,29 +396,33 @@ if(motor_setRPM == 0) {
 
   // READING
   if(nextCommType == 1) { 
-    nextCommType = 1;
+    nextCommType++;
     readRegister(0x6041, 1); //Read status word every 10
     lastCommSend = millis();
     return false;
   }
 
-  if(nextCommType > 1) { 
-    nextCommType++;
-    readRegister(2114, 3);
-    lastCommSend = millis();
-    return false;
+  if(nextCommType > 1 && nextCommType < 10) {
+    if (nextCommType % 2 == 0) {
+      nextCommType++;
+      readRegister(0x606C, 1);
+      lastCommSend = millis();
+    } else {
+      nextCommType++;
+      readRegister(0x6077, 1);
+      lastCommSend = millis();
+    }
   }
 
-  if(nextCommType > 10) { 
-    nextCommType = 1;
+  if(nextCommType >= 10) { 
+    nextCommType = 0;
   }
-
   return false;
 }
 
 bool motorOff() {
     for(int i = 0; i < 10; i++) {
-      if(writeConfirm(0x6040, 3)) { //SET SPEED LIMIT FORWARD = 0
+      if(writeConfirm(0x6040, 3)) {
         reg_6040 = 3;
         return true;
       } 
@@ -422,8 +437,8 @@ void motorSleep() {
   #endif
     for(int i = 0; i < 10; i++) {
       delay(200);
-      if(writeConfirm(0x6040, 1)) { //Set control word to 0 = lowest power state possible.
-        reg_6040 = 1;
+      if(writeConfirm(0x6040, 0)) { //Set control word to 0 = lowest power state possible.
+        reg_6040 = 0;
         #ifdef DEBUG_MOTORCONTROL
           Serial.println("Servo drive set to low power state");
         #endif
@@ -477,6 +492,14 @@ bool Calibrate() {
         #endif
         currentCal++;
         motor_setRPM = (currentCal*rpm_scalar + absolute_min_rpm) > absolute_max_rpm ? absolute_max_rpm : (currentCal*rpm_scalar + absolute_min_rpm);
+
+        if(motor_setRPM < 0) { 
+          #ifdef DEBUG_CALIB
+            Serial.print("Motor set ERROR <0: "), Serial.println(motor_setRPM);
+          #endif
+          motor_setRPM = 0;
+        }
+
         checkTime = millis(); 
         sum = 0;
         sumCount = 0;
@@ -502,6 +525,5 @@ bool Calibrate() {
 
     return false;
 }
-
 
 #endif

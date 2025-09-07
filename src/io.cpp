@@ -181,7 +181,7 @@ void do_io() {
             Menu1[menu1Selected].value += encoder_change() * Menu1[menu1Selected].scalar;
             if(Menu1[menu1Selected].value > Menu1[menu1Selected].maxValue) Menu1[menu1Selected].value = Menu1[menu1Selected].maxValue;
             if(Menu1[menu1Selected].value < Menu1[menu1Selected].minValue) Menu1[menu1Selected].value = Menu1[menu1Selected].minValue;
-            if(menu1Selected == CALIBRATE) { 
+            if(menu1Selected == Menu1Items::CALIBRATE) { 
                 //DISPLAY press start to continue
                 ledAction(2);
             } else ledAction(0);
@@ -201,16 +201,16 @@ void do_io() {
 
         if(ENC_BUTTON() == true) { 
             if(enterMenu == false) { 
-                if(menu1Selected == PURGESETTINGS) state = MENU2;
-                if(menu1Selected == GBWSETTINGS) state = MENU3;
-                if(menu1Selected == EXITMENU) lastIdle? state = IDLE : state = IDLE_GBW; 
-                if(menu1Selected != PURGESETTINGS && menu1Selected != GBWSETTINGS && menu1Selected != EXITMENU) enterMenu = true; //entering settings adjustment
+                if(menu1Selected == Menu1Items::PURGESETTINGS) state = MENU2;
+                if(menu1Selected == Menu1Items::GBWSETTINGS) state = MENU3;
+                if(menu1Selected == Menu1Items::EXITMENU) lastIdle? state = IDLE : state = IDLE_GBW; 
+                if(menu1Selected != Menu1Items::PURGESETTINGS && menu1Selected != Menu1Items::GBWSETTINGS && menu1Selected != Menu1Items::EXITMENU) enterMenu = true; //entering settings adjustment
                 OriginalValue = Menu1[menu1Selected].value;
             } else { 
                 enterMenu = false;
                 pdata_write(2);
             }
-        } else if(longPress == true && menu1Selected == CALIBRATE) { 
+        } else if(longPress == true && menu1Selected == Menu1Items::CALIBRATE) { 
             state = CALIBRATING;  
             enterMenu = false;
             disp_updateRequired = true;
@@ -231,15 +231,15 @@ void do_io() {
             ledAction(0);
         }
 
-        if(menu2Selected > NUM_MENU2_ITEMS - 1) menu2Selected = 0;
-        if(menu2Selected < 0) menu2Selected = NUM_MENU2_ITEMS - 1;
+        if(menu2Selected > Menu2Items::NUM_MENU2_ITEMS - 1) menu2Selected = 0;
+        if(menu2Selected < 0) menu2Selected = Menu2Items::NUM_MENU2_ITEMS - 1;
 
         if(enterMenu == true) { 
             Menu2[menu2Selected].value += encoder_change() * Menu2[menu2Selected].scalar;
             if(Menu2[menu2Selected].value > Menu2[menu2Selected].maxValue) Menu2[menu2Selected].value = Menu2[menu2Selected].maxValue;
             if(Menu2[menu2Selected].value < Menu2[menu2Selected].minValue) Menu2[menu2Selected].value = Menu2[menu2Selected].minValue;
             
-            if(menu2Selected == SETBUTTONPURGE && Menu2[SETBUTTONPURGE].value == true) { 
+            if(menu2Selected == Menu2Items::SETBUTTONPURGE && Menu2[SETBUTTONPURGE].value == true) { 
                 ledAction(2);
             } else ledAction(0);
         }
@@ -247,7 +247,7 @@ void do_io() {
         //BUTTON ROUTES
         if(START_BUTTON() == true) { 
             if(enterMenu == false) { 
-                menu2Selected = RETURN_FROM_PURGE;
+                menu2Selected = Menu2Items::RETURN_FROM_PURGE;
                 state = MENU1;
             } else { 
                 enterMenu = false;
@@ -257,8 +257,8 @@ void do_io() {
 
         if(ENC_BUTTON() == true) { 
             if(enterMenu == false) { 
-                if(menu2Selected == RETURN_FROM_PURGE) state = MENU1;
-                if(menu2Selected != RETURN_FROM_PURGE) enterMenu = true;
+                if(menu2Selected == Menu2Items::RETURN_FROM_PURGE) state = MENU1;
+                if(menu2Selected != Menu2Items::RETURN_FROM_PURGE) enterMenu = true;
                 OriginalValue = Menu2[menu2Selected].value;
             } else { 
                 enterMenu = false;
@@ -271,8 +271,8 @@ void do_io() {
         ledAction(0);
         //Encoder routes
         if(enterMenu == false) menu3Selected += Menu1[INVERT_SCROLL].value? encoder_change() : -encoder_change();
-        if(menu3Selected > NUM_MENU3_ITEMS - 1) menu3Selected = 0;
-        if(menu3Selected < 0) menu3Selected = NUM_MENU3_ITEMS - 1;
+        if(menu3Selected > Menu3Items::NUM_MENU3_ITEMS - 1) menu3Selected = 0;
+        if(menu3Selected < 0) menu3Selected = Menu3Items::NUM_MENU3_ITEMS - 1;
 
         if(enterMenu == true) { 
             Menu3[menu3Selected].value += encoder_change()* Menu3[menu3Selected].scalar;
@@ -283,7 +283,7 @@ void do_io() {
         //Button routes
         if(START_BUTTON() == true) { 
             if(enterMenu == false) { 
-                menu3Selected = RETURN_FROM_GBW;
+                menu3Selected = Menu3Items::RETURN_FROM_GBW;
                 state = MENU1;
             } else { 
                 enterMenu = false;

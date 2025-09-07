@@ -34,9 +34,7 @@ int16_t pending_reg_515 = 0xFFFF;
 0022 -> motor rated torque
 
 0100 -> control mode (3 = torque mode)
-0108 & 0109 -> fault mode behaviour (0 = coast & de energize)
 
-503 = 
 1300 -> running status
 1301 -> current RPM
 1303 -> motor torque
@@ -98,7 +96,9 @@ bool do_comm() { // can be called continously and will update all values. Return
   }
 
   // Motor stall flow
-  int16_t torquePercent = (1000 * motor_currentTorque / Menu1[SETMOTORTORQUE].value); //A value 
+  int16_t torquePercent;
+  if(Menu1[SETMOTORTORQUE].value > 0) torquePercent = (1000 * motor_currentTorque / Menu1[SETMOTORTORQUE].value); //A value 
+  else torquePercent = 0;
   if(motor_setRPM != 0 && torquePercent > 90 && abs(motor_currentRPM) < rpm_scalar) { 
     motor_setRPM = 0;
     state = IDLE; 
@@ -115,7 +115,7 @@ bool do_comm() { // can be called continously and will update all values. Return
       reg_515 = 0;
       reg_525 = -1;
       reg_201 = -1;
-      lastCommReceived = millis();
+      lastommReceived = millis();
       nextCommType = 0;
       commStatus = COMM_CONNECTED;
       currentStatus = MOTOR_NOT_READY;
@@ -172,11 +172,11 @@ bool do_comm() { // can be called continously and will update all values. Return
     // >>>>>> SEND SINGLE WRITE
     if(lastRequestType == 0) {  
       switch(received) {
-        case 201: reg_201 = lastRead[0];
-        case 503: reg_503 = lastRead[0];
-        case 514: reg_514 = lastRead[0];
-        case 515: reg_515 = lastRead[0];
-        case 525: reg_525 = lastRead[0];
+        case 201: { reg_201 = lastRead[0]; break; }
+        case 503: { reg_503 = lastRead[0]; break; }
+        case 514: { reg_514 = lastRead[0]; break; }
+        case 515: { reg_515 = lastRead[0]; break; }
+        case 525: { reg_525 = lastRead[0]; break; }
       }
     }
 
@@ -360,19 +360,6 @@ bool do_comm() { // can be called continously and will update all values. Return
     lastCommSend = millis();
     return false;
   }
-
-  // if(nextCommType == 10) { 
-  //   nextCommType++;
-  //   readRegister(0x6041, 1); //Read status word every 10.
-  //   lastCommSend = millis();
-  //   return false;
-  // }
-  // if(nextCommType == 11) { 
-  //   readRegister(0x6040, 1); //Read control word.
-  //   nextCommType = 1;
-  //   lastCommSend = millis();
-  //   return false;
-  // }
 
   return false;
 }

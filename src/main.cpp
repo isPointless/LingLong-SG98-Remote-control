@@ -22,47 +22,66 @@ int8_t menu3Selected = RETURN_FROM_GBW;
 bool enterMenu = false;
 bool firstBootFlag = false;
 
-menuEntry Menu1[NUM_MENU1_ITEMS] = { 
-    {"EXIT MENU", 0, 0, 0, 0, "EXITMENU"}, //0
-    {"Brightness", default_brightness, 1, 255, 1, "BRIGHTNESS"}, //1
-    {"Purge Settings", 0, 0, 0, 0, "PURGESETT"}, //2
-    {"GbW Settings", 0, 0, 0, 0, "GBWSETT"}, //3
-    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE"}, //4
-    {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM"}, //5
-    {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM"}, //6
-    {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT"}, //7
-    {"Motor torque 0.1%", default_motor_torque, 0, 3000, 10, "MOTORTORQ"}, //8 
-    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT"},//9
-    {"Invert scrolling", 0, 0, 1, 1, "SCROLL"}, //10
-};
-menuEntry Menu2[NUM_MENU2_ITEMS] = { 
-    {"BACK", 0, 0, 0, 0, "RETURN2"}, //0
-    {"Purge /w button", default_buttonPurge, 0, 1, 1, "PURGEBTN"}, //1
-    {"Purge frames LOW", default_purgeFramesLow, 2, 20, 1, "PURGEFRL"}, //2
-    {"Purge frames HIGH", default_purgeFramesHigh, 2, 20, 1, "PURGEFRH"}, //3
-    {"Purge Scalar LOW", default_purgePrctLow, 101, 200, 1, "PURGESCLRL"}, //4
-    {"Purge Scalar HIGH", default_purgePrctHigh, 101, 200, 1, "PURGESCLRH"}, //5
-    {"Purge duration", default_purgeDuration, 500, 5000, 100, "PURGEDUR"}, //6
-    {"Purge delay", default_purgeDelay, 100, 10000, 50, "PURGEDEL"}, //7
-    {"Reverse rotation", default_reverseRotation, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "RVRSRPM"}, //8
-    {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE"}, //9
-    {"Purge stabilize time", default_purgeStabilTime, 100, 5000, 50, "PURGESTABILT" }, //10
-    {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "PURGEFWRPM" }, //11
-    {"Purge 0rpm time", default_purge_off_time, 0, 5000, 10, "PURGEOFFT"},
+#ifdef JMC_DRIVE
+menuEntry Menu1[NUM_MENU1_ITEMS] = {
+    {"EXIT MENU", 0, 0, 0, 0, "EXITMENU", ""},                 // 0
+    {"Purge Settings", 0, 0, 0, 0, "PURGESETT", ""},           // 1
+    {"GbW Settings", 0, 0, 0, 0, "GBWSETT", ""},               // 2
+    {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT", "min"},// 3
+    {"Brightness", default_brightness, 1, 255, 1, "BRIGHTNESS", ""}, // 4
+    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT", "%"}, // 5
+    {"Invert scrolling", 0, 0, 1, 1, "SCROLL", ""},            // 6
+    {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM", "rpm"}, // 7
+    {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM", "rpm"},              // 8
+    {"Motor ramp speed", default_ramp_speed, 100, 2500, 100, "RMPSPD", "rpm/s"},                   // 9
+    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 10
 };
 
-menuEntry Menu3[NUM_MENU3_ITEMS] = { 
-    {"BACK", 0, 0, 0, 0, "RETURN3"}, //0
-    {"GbW RPM", default_GBWRPM, 200, 1500, rpm_scalar, "GBWRPMSET"}, //1
-    {"GbW Slow Phase t", default_slow_time, 0, 2000, 1, "GBWSLOWT"}, //2
-    {"GbW Slow RPM", default_slow_rpm, rpm_scalar, 500, rpm_scalar, "GBWSLOWRPM"}, //3
-    {"SpeedModifier", default_speedModifier, 1, 32767, 100, "GBWSPEEDMOD"}, //4 * 10.000
-    {"Start delay", default_start_delay, 0, 1000, 50, "GBWSTARTDEL"}, // 5
-    {"Time offset", default_time_offset, 0, 1000, 10, "TIMEOFFSET"}, // 6
-    {"Save scale", 0, 0, 1, 1, "SCALESTORED"}, //7
+#else // RT
+menuEntry Menu1[NUM_MENU1_ITEMS] = {
+    {"EXIT MENU", 0, 0, 0, 0, "EXITMENU", ""},                 // 0
+    {"Purge Settings", 0, 0, 0, 0, "PURGESETT", ""},           // 1
+    {"GbW Settings", 0, 0, 0, 0, "GBWSETT", ""},               // 2
+    {"Sleep time", default_sleepTime, 0, 300, 5, "SLEEPT", "min"},// 3
+    {"Brightness", default_brightness, 1, 255, 1, "BRIGHTNESS", ""}, // 4
+    {"LED max Brightness", default_led_brightness, 0, 100, 1, "LEDPRCT", "%"}, // 5
+    {"Invert scrolling", 0, 0, 1, 1, "SCROLL", ""},            // 6
+    {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM", "rpm"}, // 7
+    {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM", "rpm"},              // 8
+    {"Motor torque", default_motor_torque, 10, 3000, 10, "MOTORTORQ", "0.1%"},               // 9
+    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 10
+};
+#endif
+
+menuEntry Menu2[NUM_MENU2_ITEMS] = {
+    {"BACK", 0, 0, 0, 0, "RETURN2", ""},                                           // 0  RETURN_FROM_PURGE
+    {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE", ""},    // 1  AUTO_PURGE_ENABLED
+    {"Purge /w button", default_buttonPurge, 0, 1, 1, "PURGEBTN", ""},             // 2  SETBUTTONPURGE
+    {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "PURGEFWRPM", "rpm" },  // 3  SETPURGERPM
+    {"Reverse rotation", default_reverseRotation, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "RVRSRPM", "rpm"},            // 4  SETPURGEREVERSE
+    {"Purge delay", default_purgeDelay, 100, 10000, 50, "PURGEDEL", "ms"},           // 5  SETPURGEDELAY
+    {"Purge duration", default_purgeDuration, 500, 5000, 100, "PURGEDUR", "ms"},     // 6  SETPURGETIME
+    {"Purge 0rpm time", default_purge_off_time, 0, 5000, 10, "PURGEOFFT", "ms"},     // 7  SETPURGEOFFTIME
+    {"Purge stabilize time", default_purgeStabilTime, 100, 5000, 50, "PURGESTABILT" , "ms"}, // 8  SETPURGESTABILTIME
+    {"Purge frames HIGH", default_purgeFramesHigh, 2, 20, 1, "PURGEFRH", ""},      // 9  SETPURGEFRAMESHIGH
+    {"Purge frames LOW", default_purgeFramesLow, 2, 20, 1, "PURGEFRL", ""},        // 10 SETPURGEFRAMESLOW
+    {"Purge Scalar HIGH", default_purgePrctHigh, 101, 200, 1, "PURGESCLRH", "%"},   // 11 SETPURGEPRCTHIGH
+    {"Purge Scalar LOW", default_purgePrctLow, 101, 200, 1, "PURGESCLRL", "%"},     // 12 SETPURGEPRCTLOW
+    {"Auto off time", default_auto_off_time, 0, 300, 10, "OFFTIME", "s"},           // 13 AUTO_OFF_TIME
 };
 
-volatile bool newData = true; //This is newdata from DRIVE COMM
+menuEntry Menu3[NUM_MENU3_ITEMS] = {
+    {"BACK", 0, 0, 0, 0, "RETURN3", ""},                            // 0 RETURN_FROM_GBW
+    {"GbW RPM", default_GBWRPM, 200, 1500, rpm_scalar, "GBWRPMSET", "rpm"}, // 1 GBW_RPM_SET
+    {"GbW Slow RPM", default_slow_rpm, rpm_scalar, 500, rpm_scalar, "GBWSLOWRPM", "rpm"}, // 2 GBW_SLOW_RPM
+    {"GbW Slow Phase t", default_slow_time, 0, 2000, 1, "GBWSLOWT", "ms"}, // 3 GBW_SLOW_PHASE
+    {"Start delay", default_start_delay, 0, 1000, 50, "GBWSTARTDEL", "ms"}, // 4 GBW_BUTTON_DELAY
+    {"SpeedModifier", default_speedModifier, 1, 32767, 100, "GBWSPEEDMOD", ""},     // 5 GBW_SPEEDMOD
+    {"Time offset", default_time_offset, 0, 1000, 10, "TIMEOFFSET", "ms"},            // 6 GBW_OFFSET
+    {"Save scale", 0, 0, 1, 1, "SCALESTORED", ""},                                  // 7 SAVE_SCALE
+};
+
+volatile bool newData = true; //This is new TORQUE data.
 
 volatile uint8_t error = 0;
 int16_t setRPM = default_setRPM;
@@ -101,7 +120,11 @@ void setup() {
         Serial.println("Failed to create mutex!");
         error = 5;
     }
+    #ifdef DEBUG
     delay(2000);
+    #else
+    delay(250);
+    #endif
     
     Serial.println("start");
     setCpuFrequencyMhz(80);
@@ -178,13 +201,11 @@ void loop() {
     if(state == GRINDING)
     { 
         checkPurge();
-        //lastActivity = millis();
     }
 
     if(state == PURGING) { 
         ledAction(1);
         do_purge();
-      //  lastActivity = millis();
     }
 
     if(state == GRINDING_GBW)
@@ -229,7 +250,7 @@ void checkPurge() {
     static int16_t purge_frames;
 
     //if last call was +1000ms ago, reset.
-    if(lastCall + 1000 < millis()) { 
+    if(lastCall + 500 < millis()) { 
         lastCall = millis();
         startTime = millis();
         ready_purge = false;
@@ -249,16 +270,20 @@ void checkPurge() {
         startTime = millis();
     }
 
-    if(startTime + 60000 < millis() && ready_purge == false) { 
-        motor_setRPM = 0;
-        state = IDLE;
+    // Auto off after x time no grinding detected
+    if(Menu2[AUTO_OFF_TIME].value > 0) {
+        if(startTime + Menu2[AUTO_OFF_TIME].value*1000 < millis() && ready_purge == false) { 
+            motor_setRPM = 0;
+            state = IDLE;
+            lastActivity = millis();
+        }
     }
 
-    //value 9 = auto purge enabled, value 10 = auto purge calibration delay
+    //Auto purge sequence
     if(Menu2[AUTO_PURGE_ENABLED].value == true && startTime + Menu2[SETPURGESTABILTIME].value < millis() && lastActivity + 1000 < millis() && newData == true) 
     { 
+
     //the torque defined during calibration
-    
       if(rpm_scalar != 0) test_torque = calibrateArray[((setRPM + absolute_min_rpm)/rpm_scalar)];
       #ifdef DEBUG_CALIB
         Serial.print("torque: "), Serial.print(motor_currentTorque), Serial.print(" test: "), Serial.println(test_torque);
@@ -311,7 +336,7 @@ void do_purge() {
     uint16_t delayTime = Menu2[SETPURGEOFFTIME].value;
 
     // if its the first call in a while..
-    if(lastCall + 200 < millis()) { 
+    if(lastCall + 500 < millis()) { 
         lastCall = millis();
         startTime = millis(); 
         phase = 0;
@@ -330,7 +355,7 @@ void do_purge() {
 
     // Time between delayTime and 500 + purgeTime 
     if(startTime + delayTime < millis() && startTime + delayTime + Menu2[SETPURGETIME].value > millis()) {
-        motor_setRPM = Menu2[SETPURGERPM].value; 
+        motor_setRPM = Menu2[SETPURGERPM].value > Menu1[SETMAX].value? Menu1[SETMAX].value : Menu2[SETPURGERPM].value; 
         phase = 2;
     }
 
@@ -348,7 +373,7 @@ void do_purge() {
         }
         //do another reverse purge for purge time
         if(startTime + 2*delayTime + Menu2[SETPURGETIME].value < millis() && startTime + 2*delayTime + 2*Menu2[SETPURGETIME].value > millis()) {
-            motor_setRPM = (-1)*Menu2[SETPURGEREVERSE].value;
+            motor_setRPM = (-1) * (Menu2[SETPURGEREVERSE].value > Menu1[SETMAX].value? Menu1[SETMAX].value : Menu2[SETPURGEREVERSE].value);
             phase = 4;
         }
         if(startTime + 2*delayTime + 2*Menu2[SETPURGETIME].value < millis()) { 
@@ -445,6 +470,7 @@ void doVitals() {
 
 void sleepTimeCheck() { 
     if(Menu1[SETSLEEP].value == 0) return;
+    if(state == GRINDING || state == GRINDING_GBW) return;
 
     if(lastActivity + (Menu1[SETSLEEP].value * 60000) < millis() && millis() > (Menu1[SETSLEEP].value * 60000)) { 
         rtc_state = state; // save last state

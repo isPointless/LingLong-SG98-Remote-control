@@ -3,8 +3,8 @@
 #pragma once
 
 // CHOOSE ONE
-#define RT_DRIVE
-// #define JMC_DRIVE 
+// #define RT_DRIVE
+#define JMC_DRIVE 
 
 //DEBUG FLAGS 
 // #define DEBUG
@@ -15,13 +15,18 @@
 // #define DEBUG_GBW
 
 //#define BUILD_ID (new build ID = resets all saved params)
-#define BUILD_ID "0002"
+#define BUILD_ID "0003"
 
 // USER SETTINGS
 #define absolute_min_rpm 0
-#define absolute_max_rpm 2500
+#ifdef RT_DRIVE
+#define absolute_max_rpm 3000
+#else
+#define absolute_max_rpm 2000
+#endif
+
 #define rpm_scalar 25
-#define SIZEOFCALIBRATEARRAY (2*(absolute_max_rpm - absolute_min_rpm)/rpm_scalar) // 2 * (ABSOLUTE_MIN_RPM - ABSOLUTE_MAX_RPM) / RPM_SCALAR
+#define SIZEOFCALIBRATEARRAY (2*(absolute_max_rpm - absolute_min_rpm)/rpm_scalar)
 #define LONGPRESS 500 //after Xms a long press is registered
 #define DISP_REFRESH_RATE 50 //Hz
 
@@ -46,8 +51,6 @@
 #define DISP_CS 14
 #define DISP_BL 21
 
-#define SLEEP_DISP_BL GPIO_NUM_14
-
 //EX_SPI (unused but accessible in the board)
 #define EXSPI_MOSI 35
 #define EXSPI_MISO 37
@@ -59,8 +62,8 @@
 #define EXSCL 9
 
 // COMM SETTINGS
-#define COMMINTERVAL 100 // comm interval during normal operation
-#define COMM_DELAY_RECEIVE 50 //expect a respond 10ms after request send
+#define COMMINTERVAL 60 // comm interval during normal operation
+#define COMM_DELAY_RECEIVE 30 //expect a respond 10ms after request send
 #define COMM_DELAY_IDLE 1000
 #define COMM_DELAY_SEND 50 //send every 50ms max 
 #define DISCONNECTED_AFTER 10000 //after Xms of not receiving comms, disconnected error shows
@@ -89,10 +92,14 @@
 #define CAL_TIME 2500 //calibration time minus 500ms of settling in
 #define default_setRPM 1000
 #define default_brightness 200
-#define default_maxRPM 2500
+#define default_maxRPM 2000
 #define default_minRPM 100
-#define default_motor_torque 1040
+#define default_motor_torque 1000
 #define default_led_brightness 100
+
+#ifdef JMC_DRIVE
+#define default_ramp_speed 1000
+#endif
 
 #define default_setWeight 18000
 #define default_max_weight 99900
@@ -103,14 +110,26 @@
 #define default_speedModifier 4500
 #define default_start_delay 200
 #define default_time_offset 300
+#define default_auto_off_time 60
 
 #define default_autoPurgeEnabled 1
 #define default_buttonPurge 1
 #define default_autoPurgeEnabled 1
+#define default_auto_off_time 60
+
+#ifdef RT_DRIVE
 #define default_purgeFramesLow 5
 #define default_purgeFramesHigh 3
 #define default_purgePrctLow 125
 #define default_purgePrctHigh 125
+#endif
+#ifdef JMC_DRIVE
+#define default_purgeFramesLow 7
+#define default_purgeFramesHigh 5
+#define default_purgePrctLow 130
+#define default_purgePrctHigh 130
+#endif
+
 #define default_purgeDuration 3000
 #define default_purgeDelay 2000
 #define default_purgeForwardRPM 2000

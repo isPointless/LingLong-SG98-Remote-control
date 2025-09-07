@@ -17,7 +17,6 @@ extern COMM_STATUS commStatus;
 enum SYSTEM_STATUS{MOTOR_NOT_CONNECTED, MOTOR_NOT_READY, MOTOR_READY, MOTOR_ENABLED, MOTOR_FAULT, MOTOR_INVALID};
 extern SYSTEM_STATUS currentStatus;
 
-
 void motor_init(); //initialize / verify motor parameters 
 bool do_comm(); //returns true if new data has been received
 bool motorOff();

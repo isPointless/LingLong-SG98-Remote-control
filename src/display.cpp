@@ -566,27 +566,30 @@ void drawGrindingOrPurgingScreen() {
   
 
     // --- Torque speedometer (right side) ---
-   
-    int16_t torquePercent = (1000 * motor_currentTorque / Menu1[SETMOTORTORQUE].value); //A value 
+    #ifdef RT_DRIVE
+      int16_t torquePercent = ((1000 * motor_currentTorque) / Menu1[SETMOTORTORQUE].value); //A value 
+    #else
+      int16_t torquePercent = (motor_currentTorque / 10); //A value 
+    #endif
     if (prevTorque != motor_currentTorque) {
         tft->fillCircle(speedoCX, speedoCY, speedoR + 2, ST77XX_BLACK);
 
         // Gradient color: green (0%) -> yellow (50%) -> red (100%)
         uint8_t r, g, b;
-        if (torquePercent <= 50) {
+        if (abs(torquePercent) <= 50) {
             // Green to Yellow: (0,255,0) -> (255,255,0)
-            r = (uint8_t)(255.0 * (torquePercent / 50.0));
+            r = (uint8_t)(255.0 * (abs(torquePercent) / 50.0));
             g = 255;
             b = 0;
         } else {
             // Yellow to Red: (255,255,0) -> (255,0,0)
             r = 255;
-            g = (uint8_t)(255.0 * (1.0 - (torquePercent - 50) / 50.0));
+            g = (uint8_t)(255.0 * (1.0 - (abs(torquePercent) - 50) / 50.0));
             b = 0;
         }
         uint16_t color = tft->color565(r, g, b);
 
-        float angle = (torquePercent / 100.0) * 270.0;
+        float angle = (abs(torquePercent) / 100.0) * 270.0;
         for (int i = 0; i < angle; i += 4) {
             float rad = (135 + i) * M_PI / 180.0;
             int x0 = speedoCX + cos(rad) * (speedoR - 10);
@@ -1075,7 +1078,7 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
         prevValue = 0xFFFF; // invalid so redraw
 
       // Special case: Calibrate (Menu1[CALIBRATE])
-      if (menuNum == 1 && selectedIdx == 4) {
+      if (menuNum == 1 && selectedIdx == Menu1Items::CALIBRATE) {
         // "Calibrate?" top center
         tft->setFont(&FreeSans18pt7b);
         tft->setTextColor(ST77XX_WHITE);
@@ -1108,13 +1111,12 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
           tft->print(item.name);
       }
     } 
-    if(menuNum == 1 && selectedIdx == 4) prevValue = item.value; //basically do nothing
+    if(menuNum == 1 && selectedIdx == Menu1Items::CALIBRATE) prevValue = item.value; //basically do nothing
     else {
       if(prevValue != item.value) {
         tft->fillRect(0, 60, SCREEN_WIDTH, SCREEN_HEIGHT-60, ST77XX_BLACK);
-        // If min/max are 0/1, show "Disabled"/"Enabled" with box around selected
         prevValue = item.value;
-
+        // If min/max are 0/1, show "Disabled"/"Enabled" with box around selected
         if (item.minValue == 0 && item.maxValue == 1 && item.scalar == 1) {
             const char* labels[2] = {"Disabled", "Enabled"};
             const char* alt_labels[2] = {"Don't save", "Save"};
@@ -1137,7 +1139,7 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
                 tft->setTextColor(ST77XX_WHITE);
                 int16_t x1, y1; uint16_t w, h;
                 // Special case: Save scale (menu3.7)
-                if(menuNum == 3 && selectedIdx == 7) {
+                if(menuNum == 3 && selectedIdx == Menu3Items::SAVE_SCALE) {
                   tft->getTextBounds(alt_labels[i], 0, 0, &x1, &y1, &w, &h);
 
                   int y = 100 + i * 50;
@@ -1179,15 +1181,48 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
             }
 
         } else {
-            // Show value, big and centered
-            char valStr[16];
-            sprintf(valStr, "%d", item.value);
-            tft->setFont(&FreeSans24pt7b);
-            tft->setTextColor(COLOR_GREEN);
-            int16_t x1, y1; uint16_t w, h;
-            tft->getTextBounds(valStr, 0, 0, &x1, &y1, &w, &h);
-            tft->setCursor((SCREEN_WIDTH - w) / 2, SCREEN_HEIGHT / 2);
-            tft->print(valStr);
+          // DRAW VALUE + UNIT
+          char valStr[16];
+          snprintf(valStr, sizeof(valStr), "%d", item.value);
+
+          const GFXfont* fontVal  = &FreeSans24pt7b;
+          const GFXfont* fontUnit = &FreeSans12pt7b;  // pick your unit font
+
+          // Measure value
+          tft->setFont(fontVal);
+          int16_t x1v, y1v; uint16_t wv, hv;
+          tft->getTextBounds(valStr, 0, 0, &x1v, &y1v, &wv, &hv);
+
+          // Measure a space (for padding between value and unit) using the unit font
+          tft->setFont(fontUnit);
+          int16_t x1s, y1s; uint16_t ws, hs;
+          tft->getTextBounds("   ", 0, 0, &x1s, &y1s, &ws, &hs);
+
+          // Measure unit
+          int16_t x1u, y1u; uint16_t wu, hu;
+          tft->getTextBounds(item.unit ? item.unit : "", 0, 0, &x1u, &y1u, &wu, &hu);
+
+          // Total width to center
+          uint16_t totalW = wv + ws + wu;
+          int16_t left = (SCREEN_WIDTH - totalW) / 2;
+
+          // Choose baseline (same for both so they align)
+          int16_t yBase = SCREEN_HEIGHT / 2;
+
+          tft->setTextColor(COLOR_GREEN);
+
+          // Draw value
+          tft->setFont(fontVal);
+          tft->setCursor(left - x1v, yBase);   // compensate for x1v
+          tft->print(valStr);
+
+          tft->setTextColor(ST77XX_WHITE);
+
+          // Draw unit
+          tft->setFont(fontUnit);
+          tft->setCursor(left + wv + ws - x1u, yBase);  // after value + space, compensate x1u
+          tft->print(item.unit ? item.unit : "");
+
         }
       }
     }
