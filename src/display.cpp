@@ -192,13 +192,16 @@ const char* getErrorChar(uint8_t error) {
     case 4: return "drive packet loss > 100";
     case 5: return "Failed to create mutex";
     case 6: return "Motor stalled..";
+    case 7: return "Write error, please reboot all";
+    case 8: return "First use, reboot drive";
     case 100: return "Unexpected set RPM";
     case 101: return "No drive connection";
     case 102: return "Calibration cancelled";
     case 103: return "Could not load stored data";
-    case 104: return "scale connection lost";
+    case 104: return "Scale connection lost";
     case 105: return "No output after 3s";
     case 106: return "No scale connected";
+    case 107: return "Please Reboot Drive";
     default: return "Unknown Error";
   }
 }
@@ -567,9 +570,9 @@ void drawGrindingOrPurgingScreen() {
 
     // --- Torque speedometer (right side) ---
     #ifdef RT_DRIVE
-      int16_t torquePercent = ((1000 * motor_currentTorque) / Menu1[SETMOTORTORQUE].value); //A value 
+      int16_t torquePercent = ((100 * motor_currentTorque) / Menu1[SETMOTORTORQUE].value); //A value 
     #else
-      int16_t torquePercent = (motor_currentTorque / 10); //A value 
+      int16_t torquePercent = ((10*motor_currentTorque)/Menu1[SETMOTORTORQUE].value) ; //A value 
     #endif
     if (prevTorque != motor_currentTorque) {
         tft->fillCircle(speedoCX, speedoCY, speedoR + 2, ST77XX_BLACK);

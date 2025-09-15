@@ -15,7 +15,7 @@
 // #define DEBUG_GBW
 
 //#define BUILD_ID (new build ID = resets all saved params)
-#define BUILD_ID "0003"
+#define BUILD_ID "0001"
 
 // USER SETTINGS
 #define absolute_min_rpm 0
@@ -63,9 +63,9 @@
 
 // COMM SETTINGS
 #define COMMINTERVAL 60 // comm interval during normal operation
-#define COMM_DELAY_RECEIVE 30 //expect a respond 10ms after request send
+#define COMM_DELAY_RECEIVE 50 //expect a respond 10ms after request send
 #define COMM_DELAY_IDLE 1000
-#define COMM_DELAY_SEND 50 //send every 50ms max 
+#define COMM_DELAY_SEND 60 //send every 50ms max 
 #define DISCONNECTED_AFTER 10000 //after Xms of not receiving comms, disconnected error shows
 #define SEND_RPM_EVERY 5 //send RPM every X frames
 
@@ -76,7 +76,6 @@
 #define WAKE_ENC_B GPIO_NUM_40
 #define SLEEP_RE GPIO_NUM_15
 #define SLEEP_DE GPIO_NUM_16
-
 
 //Encoder ticks per physical tick
 #define ENC_TOL 1
@@ -94,12 +93,10 @@
 #define default_brightness 200
 #define default_maxRPM 2000
 #define default_minRPM 100
-#define default_motor_torque 1000
+#define default_motor_torque 100
 #define default_led_brightness 100
 
-#ifdef JMC_DRIVE
-#define default_ramp_speed 1000
-#endif
+#define default_motor_ramp 1
 
 #define default_setWeight 18000
 #define default_max_weight 99900

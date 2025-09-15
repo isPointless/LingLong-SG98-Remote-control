@@ -25,6 +25,7 @@ int16_t reg_503 = 0; //Set torque;
 int16_t reg_514 = -1; //Speed limit forward (pos value)
 int16_t reg_515 = -1; //Speed limit reverse (pos value)
 int16_t reg_525 = -1; //JOG disable / enable (0 / 1)
+int16_t reg_701 = -1;
 
 //Only necessary for sending multiple writes
 int16_t pending_reg_514 = 0xFFFF;
@@ -97,7 +98,7 @@ bool do_comm() { // can be called continously and will update all values. Return
 
   // Motor stall flow
   int16_t torquePercent;
-  if(Menu1[SETMOTORTORQUE].value > 0) torquePercent = (1000 * motor_currentTorque / Menu1[SETMOTORTORQUE].value); //A value 
+  if((Menu1[SETMOTORTORQUE].value*10) > 0) torquePercent = (1000 * motor_currentTorque / (Menu1[SETMOTORTORQUE].value*10)); //A value 
   else torquePercent = 0;
   if(motor_setRPM != 0 && torquePercent > 90 && abs(motor_currentRPM) < rpm_scalar) { 
     motor_setRPM = 0;
@@ -111,11 +112,15 @@ bool do_comm() { // can be called continously and will update all values. Return
       #ifdef DEBUG_MOTORCONTROL
         Serial.println("We're connected!");
       #endif
+      int score = 0;
+      Serial.println("701: "), Serial.println(readReturn(701, 1));
+      //if(writeConfirm(701, Menu1[SETMOTORRAMP].value)) { reg_701 = Menu1[SETMOTORRAMP].value ; score++; } 
+
       reg_514 = 0;
       reg_515 = 0;
       reg_525 = -1;
       reg_201 = -1;
-      lastommReceived = millis();
+      lastCommReceived = millis();
       nextCommType = 0;
       commStatus = COMM_CONNECTED;
       currentStatus = MOTOR_NOT_READY;
@@ -268,8 +273,8 @@ bool do_comm() { // can be called continously and will update all values. Return
           return false;
         }
       }
-      if(reg_503 != Menu1[SETMOTORTORQUE].value) { 
-        if(writeSingleRegister(503, Menu1[SETMOTORTORQUE].value)) {// MOTOR TORQUE SET
+      if(reg_503 != (Menu1[SETMOTORTORQUE].value*10)) { 
+        if(writeSingleRegister(503, (Menu1[SETMOTORTORQUE].value*10))) {// MOTOR TORQUE SET
           lastCommSend = millis(); 
           lastCommType = 0;
           nextCommType = 0;
@@ -298,7 +303,7 @@ bool do_comm() { // can be called continously and will update all values. Return
         }
       }
       //Check if we've done all commands
-      if(reg_201 == 1 && reg_503 == Menu1[SETMOTORTORQUE].value && reg_514 == motor_setRPM && reg_515 == 0 && reg_525 == 1) { 
+      if(reg_201 == 1 && reg_503 == (Menu1[SETMOTORTORQUE].value*10) && reg_514 == motor_setRPM && reg_515 == 0 && reg_525 == 1) { 
         if(nextCommType == 0) nextCommType = 1; 
       }
     } 
@@ -314,8 +319,8 @@ bool do_comm() { // can be called continously and will update all values. Return
           return false;
         }
       }
-      if(reg_503 != -Menu1[SETMOTORTORQUE].value) { 
-        if(writeSingleRegister(503, -Menu1[SETMOTORTORQUE].value)) { // MOTOR TORQUE SET
+      if(reg_503 != -(Menu1[SETMOTORTORQUE].value*10)) { 
+        if(writeSingleRegister(503, -(Menu1[SETMOTORTORQUE].value*10))) { // MOTOR TORQUE SET
           lastCommSend = millis(); 
           lastCommType = 0;
           nextCommType = 0;
@@ -343,7 +348,7 @@ bool do_comm() { // can be called continously and will update all values. Return
         }
       }
       //Check if we've done all commands
-      if(reg_201 == 1 && reg_503 == -Menu1[SETMOTORTORQUE].value && reg_514 == 0 && reg_515 == -motor_setRPM && reg_525 == 2) { 
+      if(reg_201 == 1 && reg_503 == -(Menu1[SETMOTORTORQUE].value*10) && reg_514 == 0 && reg_515 == -motor_setRPM && reg_525 == 2) { 
         if(nextCommType == 0) nextCommType = 1; 
       }
   }

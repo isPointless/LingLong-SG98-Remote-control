@@ -24,12 +24,13 @@ enum Menu1Items{
     INVERT_SCROLL,
     SETMAX,
     SETMIN,
-    MOTOR_RAMP, // DIFFERENCE
+    SETMOTORTORQUE,
+    SETMOTORRAMP,
     CALIBRATE,
     NUM_MENU1_ITEMS
 };
-
-#else 
+#endif
+#ifdef RT_DRIVE
 enum Menu1Items{
     EXITMENU,
     PURGESETTINGS,
@@ -40,7 +41,7 @@ enum Menu1Items{
     INVERT_SCROLL,
     SETMAX,
     SETMIN,
-    SETMOTORTORQUE, //DIFFERENCE
+    SETMOTORTORQUE,
     CALIBRATE,
     NUM_MENU1_ITEMS
 };
@@ -115,6 +116,8 @@ FATAL:
 4 = Comm discrepancy over 100
 5 = Failed to create mutex
 6 = motor stalled
+7 = could not write all parameters
+8 = first boot
 
 NON FATAL: 
 100 = motor set RPM not equal to read from controller
@@ -124,6 +127,7 @@ NON FATAL:
 104 = scale disconnected during grinding
 105 = GbW not producing any grounds after 3s
 106 = GbW couldn't start -> no scale connected
+107 = rigidity level changed, reboot drive
 
 
 */

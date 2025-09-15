@@ -33,11 +33,12 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Invert scrolling", 0, 0, 1, 1, "SCROLL", ""},            // 6
     {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM", "rpm"}, // 7
     {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM", "rpm"},              // 8
-    {"Motor ramp speed", default_ramp_speed, 100, 2500, 100, "RMPSPD", "rpm/s"},                   // 9
-    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 10
+    {"Motor torque", default_motor_torque, 1, 300, 1, "MOTORTORQ", "%"},               // 9
+    {"Motor ramp", default_motor_ramp, 0, 12, 1, "MOTORRMP", "lvl"}, //10
+    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 11
 };
-
-#else // RT
+#endif
+#ifdef RT_DRIVE
 menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"EXIT MENU", 0, 0, 0, 0, "EXITMENU", ""},                 // 0
     {"Purge Settings", 0, 0, 0, 0, "PURGESETT", ""},           // 1
@@ -48,8 +49,8 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Invert scrolling", 0, 0, 1, 1, "SCROLL", ""},            // 6
     {"Max RPM", default_maxRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "MAXRPM", "rpm"}, // 7
     {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM", "rpm"},              // 8
-    {"Motor torque", default_motor_torque, 10, 3000, 10, "MOTORTORQ", "0.1%"},               // 9
-    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 10
+    {"Motor torque", default_motor_torque, 1, 300, 1, "MOTORTORQ", "%"},               // 9
+    {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 11
 };
 #endif
 

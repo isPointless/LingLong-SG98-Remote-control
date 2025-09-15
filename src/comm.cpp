@@ -141,7 +141,7 @@ bool writeMultipleRegisters(uint16_t reg_addr_start, uint16_t reg_count,
 }
 
 bool receiveError(uint8_t msgLength) {
-  Serial2.readBytes(response, 5);
+  // Serial2.readBytes(response, 5);
 
   //DEBUG COMM
   #ifdef DEBUG_COMM
@@ -157,7 +157,7 @@ bool receiveError(uint8_t msgLength) {
 
   if(msgLength == 5 && response[1] >= 0x80 && response[1] <= 0x90) { //error frame
     uint16_t crc_resp = response[3] | (response[4] << 8);
-    if(crc_resp != modbus_crc16(response, 5)) return 0;
+    if(crc_resp != modbus_crc16(response, 3)) return 0;
 
     errorCode = response[2];
     error = 3; 
@@ -193,7 +193,7 @@ int16_t receive() {  // Returns 0 when nothing is read. returns the read registe
 
   if(len == 5) return(receiveError(5)); //If we're between received and new send (delay)
   if(lastRequestType == 0 && len < 8) return 0;
-  if(lastRequestType > 100 && lastRequestType < 200 && len < 5+2*(lastRequestType-100)) return 0;
+  if(lastRequestType > 100 && lastRequestType < 200 && len < 7) return 0;
   if(lastRequestType > 200 && len < 8) return 0;
   // READ
   
@@ -260,6 +260,7 @@ int16_t receive() {  // Returns 0 when nothing is read. returns the read registe
       #ifdef DEBUG_COMM
         Serial.print("Lastread #" + i/2), Serial.print(" : "), Serial.println(lastRead[i/2]);
       #endif
+    if((lastRequestType-100)*2 != byteCount) lastRequestType = byteCount/2 + 100;
     }
     commCounter--;
     return lastRegAddr;
@@ -293,14 +294,14 @@ int16_t receive() {  // Returns 0 when nothing is read. returns the read registe
     }
 
     // VALIDATE REG ADDR
-    if(response[2] == request[2]) { 
+    if(response[2] == request[2] && response[3] == request[3] && response[4] == request[4] && response[5] == request[5]) { 
       commCounter--;
       return (response[2] << 8) | response[3];
     } else {
         #ifdef DEBUG_COMM
           Serial.println("Response != request");
           Serial.print("Reg Requested: "), Serial.print(lastRegAddr), Serial.print("Reg Received: "), Serial.println((response[2] << 8) | response[3]);
-      #endif
+      #endif 
     }
     return 0;
   }
