@@ -30,7 +30,9 @@ void pdata_init() {
         delay(200);
         nvs_flash_erase();   // Erase the entire flash partition used for NVS
         nvs_flash_init();    // Re-initialize NVS
-        Serial.println("First boot detected! Saving ALL");
+        #ifdef DEBUG 
+            Serial.println("First boot detected! Saving ALL");
+        #endif
         delay(200);
         preferences.begin("settings", false);
         // Update stored build ID
@@ -77,8 +79,7 @@ void pdata_read() {  //reads ALL stored settings in flash
 }
 
 
-void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 = specific setting (derived from state && menuXselected), 3 = setWeight or RPM (based on state), 4 = GbW speedModifier, 5 = lastState;
-
+void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 = specific setting (derived from state && menuXselected), 3 = setWeight or RPM (based on state), 4 = GbW speedModifier, 5 = lastState; 6=remove last scale, 7 = save scale, 8 = write reset on build id
     if(what == 0) { //write ALL (default) settings *only used when first initalizing*
         //Menu 1
         for(int i = 0; i < NUM_MENU1_ITEMS; i++) { 
@@ -168,6 +169,10 @@ void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 
         } 
         preferences.putString("SCALE_NAME", nameCopy);
         preferences.putString("SCALE_MAC", macCopy);
+    }
+
+    if(what == 8 ) { 
+        preferences.putString("build_id", "RESET"); // change build ID so it rewrites all settings on next boot
     }
 }
 

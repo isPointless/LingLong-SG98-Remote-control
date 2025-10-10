@@ -158,6 +158,9 @@ bool do_comm() { // can be called continously and will update all values. Return
 
   // First communication when disconnected
   if(commStatus == COMM_DISCONNECTED) { 
+
+    if(lastCommSend + COMM_DELAY_SEND > millis()) return false;
+
     if(writeConfirm(0x6040, 1)) { //This is blocking
 
       #ifdef DEBUG_MOTORCONTROL
@@ -507,6 +510,13 @@ void motorSleep() {
         return;
       } 
     }
+}
+
+void motorReset() { 
+  writeConfirm(0x2101, 1); // Reset control mode to speed mode
+  writeMultipleConfirm(0x1010, 2, 0, 0); // Set magic byte to 0
+  writeConfirm(0x6060, 3); //Set CiA402 to speedmode
+  motorSleep(); //Should prevent the necessity of a restart, unsure tho.
 }
 
 //This function needs to be called continuously untill it returns true; which indicates a completed calibration

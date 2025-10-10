@@ -36,6 +36,7 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Motor torque", default_motor_torque, 1, 300, 1, "MOTORTORQ", "%"},               // 9
     {"Motor ramp", default_motor_ramp, 0, 12, 1, "MOTORRMP", "lvl"}, //10
     {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 11
+    {"Reset default", 0, 0, 1, 1, "RSTALL", ""},
 };
 #endif
 #ifdef RT_DRIVE
@@ -51,12 +52,13 @@ menuEntry Menu1[NUM_MENU1_ITEMS] = {
     {"Min RPM", default_minRPM, absolute_min_rpm, 500, rpm_scalar, "MINRPM", "rpm"},              // 8
     {"Motor torque", default_motor_torque, 1, 300, 1, "MOTORTORQ", "%"},               // 9
     {"Calibrate", 0, 0 ,0, 0, "CALIBRATE", ""},           // 11
+    {"Reset default", 0, 0, 1, 1, "RSTALL", ""},
 };
 #endif
 
 menuEntry Menu2[NUM_MENU2_ITEMS] = {
     {"BACK", 0, 0, 0, 0, "RETURN2", ""},                                           // 0  RETURN_FROM_PURGE
-    {"Auto purge enabled", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE", ""},    // 1  AUTO_PURGE_ENABLED
+    {"Auto purge", default_autoPurgeEnabled, 0, 1, 1, "AUTOPURGE", ""},    // 1  AUTO_PURGE_ENABLED
     {"Purge /w button", default_buttonPurge, 0, 1, 1, "PURGEBTN", ""},             // 2  SETBUTTONPURGE
     {"Purge forward RPM", default_purgeForwardRPM, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "PURGEFWRPM", "rpm" },  // 3  SETPURGERPM
     {"Reverse rotation", default_reverseRotation, absolute_min_rpm, absolute_max_rpm, rpm_scalar, "RVRSRPM", "rpm"},            // 4  SETPURGEREVERSE
@@ -118,16 +120,18 @@ void setup() {
     Serial.begin(115200);
     scaleMutex = xSemaphoreCreateMutex();
     if (scaleMutex == NULL) {
-        Serial.println("Failed to create mutex!");
+        #ifdef DEBUG 
+            Serial.println("Failed to create mutex!");
+        #endif
         error = 5;
     }
     #ifdef DEBUG
     delay(2000);
+    Serial.println("Starting!");
     #else
     delay(250);
     #endif
     
-    Serial.println("start");
     setCpuFrequencyMhz(80);
 
     if(rtc_bootFlag1 == true) { 

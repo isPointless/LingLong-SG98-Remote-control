@@ -27,6 +27,7 @@ enum Menu1Items{
     SETMOTORTORQUE,
     SETMOTORRAMP,
     CALIBRATE,
+    RESET,
     NUM_MENU1_ITEMS
 };
 #endif
@@ -43,6 +44,7 @@ enum Menu1Items{
     SETMIN,
     SETMOTORTORQUE,
     CALIBRATE,
+    RESET,
     NUM_MENU1_ITEMS
 };
 #endif
@@ -124,7 +126,7 @@ NON FATAL:
 101 = calibration couldnt start due to... 
 102 = calibration cancelled
 103 = couldnt load preferences
-104 = scale disconnected during grinding
+104 = GbW scale disconnected during grinding
 105 = GbW not producing any grounds after 3s
 106 = GbW couldn't start -> no scale connected
 107 = rigidity level changed, reboot drive

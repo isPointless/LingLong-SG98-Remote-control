@@ -1123,6 +1123,7 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
         if (item.minValue == 0 && item.maxValue == 1 && item.scalar == 1) {
             const char* labels[2] = {"Disabled", "Enabled"};
             const char* alt_labels[2] = {"Don't save", "Save"};
+            const char* alt_label2[2] = {"Back", "RESET"};
             int selected = (item.value == 0) ? 0 : 1;
             String macCopy = "", nameCopy = "";
             if (xSemaphoreTake(scaleMutex, portMAX_DELAY)) {
@@ -1170,6 +1171,14 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
                     tft->setCursor((SCREEN_WIDTH - w) / 2, 200);
                     tft->print(macCopy); 
                   } 
+                } else if(menuNum == 1 && selectedIdx == Menu1Items::RESET) { 
+                  tft->getTextBounds(alt_label2[i], 0, 0, &x1, &y1, &w, &h);
+                  int y = 100 + i * 50;
+                  tft->setCursor((SCREEN_WIDTH - w) / 2, y);
+                  tft->print(alt_label2[i]);
+                  if (i == selected) {
+                      tft->drawRoundRect((SCREEN_WIDTH - w) / 2 - 8, y - h - 6 , w + 22, h + 16, 6, COLOR_GREEN);
+                  }
                 } else 
                 { // normal case
                   tft->getTextBounds(labels[i], 0, 0, &x1, &y1, &w, &h);

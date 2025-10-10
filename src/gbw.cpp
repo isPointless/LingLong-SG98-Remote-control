@@ -79,7 +79,7 @@ void gbwVitals()
         scaleStatus = SCALE_CONNECTED;
 
     } else { 
-        if(scale._isConnecting == true) scaleStatus = SCALE_CONNECTING;
+        if(scale.isConnecting() == true) scaleStatus = SCALE_CONNECTING;
         else { 
             scaleStatus = SCALE_DISCONNECTED;
             currentWeight = 0;

@@ -22,6 +22,7 @@ bool do_comm(); //returns true if new data has been received
 bool motorOff();
 bool Calibrate();
 void motorSleep();
+void motorReset();
 
 #endif
 #endif

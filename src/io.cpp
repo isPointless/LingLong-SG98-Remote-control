@@ -184,7 +184,8 @@ void do_io() {
             if(menu1Selected == Menu1Items::CALIBRATE) { 
                 //DISPLAY press start to continue
                 ledAction(2);
-            } else ledAction(0);
+            } else if (menu1Selected == Menu1Items::LED_BRIGHTNESS) { ledAction(1); } 
+            else { ledAction(0); } 
         }
 
         //Button routes
@@ -208,7 +209,18 @@ void do_io() {
                 OriginalValue = Menu1[menu1Selected].value;
             } else { 
                 enterMenu = false;
-                pdata_write(2);
+                if(menu1Selected != Menu1Items::RESET) pdata_write(2);
+                if(menu1Selected == Menu1Items::RESET && Menu1[menu1Selected].value == 1) { 
+                    pdata_write(8);  // Reset the build ID so it resets on boot.
+                    #ifdef JMC_DRIVE 
+                        motorReset();
+                        delay(1000);
+                        sleep_init();
+                    #else 
+                        delay(1000);
+                        ESP.restart();
+                    #endif
+                }
             }
         } else if(longPress == true && menu1Selected == Menu1Items::CALIBRATE) { 
             state = CALIBRATING;  
