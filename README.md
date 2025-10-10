@@ -16,7 +16,7 @@ If flash error in final install, plugging in the USB C shortly after pressing "U
 - 19mm ultra short throw momentary button with 3-5V LED.
 - M12 4 pin female connector
 - KCD1 SPST switch
-- 3D printed box, including 4xM3x4Wx5L heat inserts and 2x m3*8 countersunk screw and m3*6 non-countersunk screw.
+- 3D printed box, including 4xM3x5Wx4L heat inserts and 2x m3*8 countersunk screw and m3*6 non-countersunk screw.
 - A knob for the rotary encoder to your choosing.
 
 - 
