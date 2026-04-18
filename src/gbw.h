@@ -35,7 +35,7 @@ void scales_init();
 void gbwVitals();
 int16_t fakeScale();
 bool scale_connected();
-int16_t gbw_predict();
+int32_t gbw_predict();
 void gbw_learn();
 void do_gbw();
 

@@ -3,8 +3,8 @@
 #pragma once
 
 // CHOOSE ONE
-// #define RT_DRIVE
-#define JMC_DRIVE 
+#define RT_DRIVE
+// #define JMC_DRIVE 
 
 //DEBUG FLAGS 
 // #define DEBUG
@@ -15,7 +15,7 @@
 // #define DEBUG_GBW
 
 //#define BUILD_ID (new build ID = resets all saved params)
-#define BUILD_ID "0001"
+#define BUILD_ID "0002"
 
 // USER SETTINGS
 #define absolute_min_rpm 0
@@ -101,12 +101,12 @@
 #define default_setWeight 18000
 #define default_max_weight 99900
 #define default_min_weight 6000
-#define default_GBWRPM 600
-#define default_slow_time 400
-#define default_slow_rpm 200
-#define default_speedModifier 4500
-#define default_start_delay 200
-#define default_time_offset 300
+#define default_GBWRPM 800
+#define default_slow_mg 4500
+#define default_slow_rpm 300
+#define default_speedModifier 2500
+#define default_start_delay 100
+#define default_time_offset 150
 #define default_auto_off_time 60
 
 #define default_autoPurgeEnabled 1

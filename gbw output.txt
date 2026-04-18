@@ -1,0 +1,593 @@
+ *  Executing task: platformio device monitor --port /dev/cu.usbmodem1101 
+
+--- Terminal on /dev/cu.usbmodem1101 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+display init
+Comm init
+motor_init
+701: 
+0
+Client connected
+Tare
+gbw started!
+New prediction: 2563 ..at: 42
+New prediction: 2563 ..at: 258
+New prediction: 2563 ..at: 372
+New prediction: 2563 ..at: 432
+New prediction: 2563 ..at: 582
+New prediction: 2563 ..at: 642
+New prediction: 2563 ..at: 732
+New prediction: 2136 ..at: 1032
+New prediction: 4758 ..at: 1242
+New prediction: 3959 ..at: 1332
+New prediction: 3754 ..at: 1542
+New prediction: 3607 ..at: 1932
+New prediction: 3132 ..at: 2330
+New prediction: 2855 ..at: 2537
+New prediction: 2565 ..at: 2744
+New prediction: 3520 ..at: 2922
+New prediction: 3017 ..at: 3132
+New prediction: 2606 ..at: 3222
+New prediction: 2400 ..at: 3435
+New prediction: 1394 ..at: 3737
+slow phase..
+New prediction: 1186 ..at: 4032
+New prediction: 1210 ..at: 4212
+New prediction: 1250 ..at: 4422
+New prediction: 1260 ..at: 4550
+New prediction: 1232 ..at: 4632
+New prediction: 1694 ..at: 4757
+New prediction: 2083 ..at: 4812
+New prediction: 2148 ..at: 4964
+New prediction: 3008 ..at: 5022
+New prediction: 3300 ..at: 5172
+New prediction: 4682 ..at: 5240
+New prediction: 8190 ..at: 5382
+New prediction: 16620 ..at: 5412
+New prediction: 15599 ..at: 5592
+New prediction: 569 ..at: 5622
+New prediction: 569 ..at: 5712
+New prediction: 544 ..at: 5930
+New prediction: 18281 ..at: 6012
+New prediction: 7515 ..at: 6102
+New prediction: 4879 ..at: 6230
+New prediction: 4811 ..at: 6312
+New prediction: 3000 ..at: 6530
+New prediction: 1032 ..at: 6702
+New prediction: 646 ..at: 7032
+New prediction: 454 ..at: 7242
+New prediction: 469 ..at: 7306
+New prediction: 401 ..at: 7460
+New prediction: 378 ..at: 7514
+Grinding complete!
+learn!
+delta .. point .. progression: 357 139 0.39
+last shot updated idx: 59
+final weight: 8690
+target weight: 9000
+grinding duration: 7654ms
+grinding stopped estimation: 8600mg
+speed at stopping mg/ms: 0.16
+overshoot: -310
+
+datapoints:
+idx: 0  weight: 0 time: 42
+idx: 1  weight: 0 time: 259
+idx: 2  weight: 0 time: 372
+idx: 3  weight: 0 time: 432
+idx: 4  weight: 0 time: 582
+idx: 5  weight: 0 time: 642
+idx: 6  weight: 0 time: 732
+idx: 7  weight: 1390 time: 942
+idx: 8  weight: 1500 time: 1032
+idx: 9  weight: 1790 time: 1242
+idx: 10  weight: 1790 time: 1332
+idx: 11  weight: 2000 time: 1542
+idx: 12  weight: 2500 time: 1932
+idx: 13  weight: 3200 time: 2331
+idx: 14  weight: 3590 time: 2538
+idx: 15  weight: 3900 time: 2745
+idx: 16  weight: 4000 time: 2862
+idx: 17  weight: 4190 time: 2922
+idx: 18  weight: 4690 time: 3132
+idx: 19  weight: 4800 time: 3222
+idx: 20  weight: 5000 time: 3436
+idx: 21  weight: 5590 time: 3522
+idx: 22  weight: 5900 time: 3612
+idx: 23  weight: 6000 time: 3738
+idx: 24  weight: 6300 time: 3912
+idx: 25  weight: 6400 time: 4032
+idx: 26  weight: 6590 time: 4212
+idx: 27  weight: 6800 time: 4422
+idx: 28  weight: 6900 time: 4551
+idx: 29  weight: 6900 time: 4632
+idx: 30  weight: 7000 time: 4758
+idx: 31  weight: 7000 time: 4812
+idx: 32  weight: 7000 time: 4965
+idx: 33  weight: 7000 time: 5022
+idx: 34  weight: 7000 time: 5172
+idx: 35  weight: 7000 time: 5241
+idx: 36  weight: 7000 time: 5382
+idx: 37  weight: 7000 time: 5412
+idx: 38  weight: 7000 time: 5592
+idx: 39  weight: 7000 time: 5622
+idx: 40  weight: 7000 time: 5712
+idx: 41  weight: 7090 time: 5931
+idx: 42  weight: 7190 time: 6012
+idx: 43  weight: 7300 time: 6102
+idx: 44  weight: 7300 time: 6231
+idx: 45  weight: 7300 time: 6312
+idx: 46  weight: 8000 time: 6531
+idx: 47  weight: 7900 time: 6702
+idx: 48  weight: 8300 time: 6912
+idx: 49  weight: 8300 time: 7032
+idx: 50  weight: 8500 time: 7242
+idx: 51  weight: 8500 time: 7307
+idx: 52  weight: 8600 time: 7461
+idx: 53  weight: 8600 time: 7515
+-- END OF GRINDING --
+idx: 54  weight: 8600 time: 7872
+idx: 55  weight: 8600 time: 7902
+idx: 56  weight: 8600 time: 8082
+idx: 57  weight: 8600 time: 8112
+idx: 58  weight: 8600 time: 8202
+Old speedmodifier: 3511  New speedmod: 1755.50
+Actual delta weight: 0
+endingSpeed: 0.00
+live calc ending Speed: 0.16
+idealOffset: -1
+last offset: 239
+Not a proper shot.. deleting calculated values..
+Calculated speedmod: 0.176
+Calculated new Offset: 119
+return from learn..!
+Client disconnected, reason=533
+Found scale by addr: e1:72:8d:40:76:d5
+Found scale by addr: e1:72:8d:40:76:d5
+Found scale by addr: e1:72:8d:40:76:d5
+Client connected
+Client disconnected, reason=534
+Found scale by addr: e1:72:8d:40:76:d5
+Client connected
+Tare
+gbw started!
+New prediction: 2563 ..at: 41
+New prediction: 2563 ..at: 221
+New prediction: 2563 ..at: 344
+New prediction: 2563 ..at: 431
+New prediction: 2563 ..at: 521
+New prediction: 2563 ..at: 641
+New prediction: 2278 ..at: 828
+New prediction: 2079 ..at: 1035
+New prediction: 2053 ..at: 1121
+New prediction: 4285 ..at: 1242
+New prediction: 3557 ..at: 1541
+New prediction: 3611 ..at: 1631
+New prediction: 3234 ..at: 1931
+New prediction: 4548 ..at: 2321
+New prediction: 4400 ..at: 2441
+New prediction: 3723 ..at: 2719
+New prediction: 3271 ..at: 2861
+New prediction: 2954 ..at: 2926
+New prediction: 2571 ..at: 3133
+New prediction: 2290 ..at: 3281
+New prediction: 1666 ..at: 3461
+slow phase..
+New prediction: 1135 ..at: 3522
+New prediction: 1041 ..at: 3620
+New prediction: 810 ..at: 4038
+New prediction: 909 ..at: 4339
+New prediction: 1005 ..at: 4638
+New prediction: 1172 ..at: 4721
+New prediction: 1214 ..at: 4811
+New prediction: 1269 ..at: 5021
+New prediction: 2040 ..at: 5141
+New prediction: 2752 ..at: 5201
+New prediction: 4938 ..at: 5351
+New prediction: 5729 ..at: 5411
+New prediction: 6249 ..at: 5501
+New prediction: 5237 ..at: 5771
+New prediction: 2707 ..at: 5801
+New prediction: 4230 ..at: 5981
+New prediction: 4667 ..at: 6011
+New prediction: 4230 ..at: 6101
+New prediction: 4375 ..at: 6221
+New prediction: 4230 ..at: 6311
+New prediction: 4375 ..at: 6401
+New prediction: 3413 ..at: 6611
+New prediction: 2980 ..at: 6701
+New prediction: 1843 ..at: 7001
+New prediction: 1747 ..at: 7121
+New prediction: 1622 ..at: 7301
+New prediction: 1462 ..at: 7421
+New prediction: 1502 ..at: 7511
+New prediction: 1502 ..at: 7631
+New prediction: 2862 ..at: 7691
+New prediction: 4376 ..at: 7901
+New prediction: 8201 ..at: 7991
+New prediction: 7927 ..at: 8111
+New prediction: 113 ..at: 8591
+Grinding complete!
+learn!
+delta .. point .. progression: 210 0 0.00
+last shot updated idx: 65
+final weight: 8800
+target weight: 9000
+grinding duration: 8591ms
+grinding stopped estimation: 8600mg
+speed at stopping mg/ms: 0.56
+overshoot: -200
+
+datapoints:
+idx: 0  weight: 0 time: 42
+idx: 1  weight: 0 time: 221
+idx: 2  weight: 0 time: 345
+idx: 3  weight: 0 time: 431
+idx: 4  weight: 0 time: 521
+idx: 5  weight: 0 time: 641
+idx: 6  weight: 1000 time: 829
+idx: 7  weight: 1700 time: 1036
+idx: 8  weight: 1790 time: 1121
+idx: 9  weight: 1890 time: 1243
+idx: 10  weight: 2090 time: 1421
+idx: 11  weight: 2090 time: 1541
+idx: 12  weight: 2200 time: 1631
+idx: 13  weight: 2590 time: 1931
+idx: 14  weight: 2790 time: 2021
+idx: 15  weight: 3200 time: 2231
+idx: 16  weight: 3290 time: 2321
+idx: 17  weight: 3500 time: 2442
+idx: 18  weight: 4000 time: 2720
+idx: 19  weight: 4190 time: 2861
+idx: 20  weight: 4300 time: 2927
+idx: 21  weight: 4400 time: 3011
+idx: 22  weight: 4690 time: 3134
+idx: 23  weight: 5090 time: 3281
+idx: 24  weight: 6000 time: 3461
+idx: 25  weight: 6300 time: 3522
+idx: 26  weight: 6900 time: 4039
+idx: 27  weight: 7000 time: 4340
+idx: 28  weight: 7090 time: 4639
+idx: 29  weight: 7090 time: 4721
+idx: 30  weight: 7090 time: 4811
+idx: 31  weight: 7300 time: 4931
+idx: 32  weight: 7300 time: 5021
+idx: 33  weight: 7300 time: 5141
+idx: 34  weight: 7300 time: 5201
+idx: 35  weight: 7300 time: 5351
+idx: 36  weight: 7300 time: 5411
+idx: 37  weight: 7300 time: 5501
+idx: 38  weight: 7590 time: 5771
+idx: 39  weight: 7590 time: 5801
+idx: 40  weight: 7590 time: 5981
+idx: 41  weight: 7590 time: 6011
+idx: 42  weight: 7590 time: 6101
+idx: 43  weight: 7590 time: 6221
+idx: 44  weight: 7590 time: 6311
+idx: 45  weight: 7590 time: 6401
+idx: 46  weight: 7900 time: 6611
+idx: 47  weight: 7900 time: 6701
+idx: 48  weight: 8000 time: 6821
+idx: 49  weight: 8100 time: 7001
+idx: 50  weight: 8100 time: 7121
+idx: 51  weight: 8189 time: 7301
+idx: 52  weight: 8189 time: 7421
+idx: 53  weight: 8189 time: 7511
+idx: 54  weight: 8189 time: 7631
+idx: 55  weight: 8189 time: 7691
+idx: 56  weight: 8189 time: 7841
+idx: 57  weight: 8189 time: 7901
+idx: 58  weight: 8189 time: 7991
+idx: 59  weight: 8189 time: 8111
+idx: 60  weight: 8600 time: 8591
+idx: 61  weight: 8690 time: 8801
+idx: 62  weight: 8800 time: 8891
+idx: 63  weight: 8800 time: 9011
+idx: 64  weight: 8800 time: 9104
+Old speedmodifier: 3511  New speedmod: 1755.50
+Actual delta weight: 200
+endingSpeed: 0.84
+live calc ending Speed: 0.56
+idealOffset: 179
+last offset: 239
+Proper shot! saving values!
+return from learn..!
+Tare
+gbw started!
+New prediction: 5185 ..at: 102
+New prediction: 5185 ..at: 134
+New prediction: 5185 ..at: 222
+New prediction: 5185 ..at: 314
+New prediction: 5185 ..at: 432
+New prediction: 5185 ..at: 522
+New prediction: 5242 ..at: 612
+New prediction: 4672 ..at: 912
+New prediction: 4621 ..at: 1032
+New prediction: 9290 ..at: 1212
+New prediction: 5547 ..at: 1815
+New prediction: 4273 ..at: 2022
+New prediction: 3864 ..at: 2202
+New prediction: 4141 ..at: 2382
+New prediction: 3969 ..at: 2421
+New prediction: 3590 ..at: 2592
+New prediction: 3867 ..at: 2622
+New prediction: 3053 ..at: 2802
+New prediction: 3062 ..at: 2922
+New prediction: 2638 ..at: 3102
+New prediction: 2757 ..at: 3224
+New prediction: 2653 ..at: 3312
+New prediction: 2151 ..at: 3525
+New prediction: 1656 ..at: 3826
+New prediction: 1705 ..at: 4036
+New prediction: 1633 ..at: 4248
+slow phase..
+New prediction: 1714 ..at: 4302
+New prediction: 1260 ..at: 4512
+New prediction: 1081 ..at: 4602
+New prediction: 1010 ..at: 4819
+New prediction: 978 ..at: 5082
+New prediction: 1040 ..at: 5209
+New prediction: 980 ..at: 5421
+New prediction: 980 ..at: 5502
+New prediction: 1023 ..at: 5592
+New prediction: 1296 ..at: 5712
+New prediction: 1356 ..at: 5931
+New prediction: 1356 ..at: 6012
+New prediction: 1510 ..at: 6192
+New prediction: 1612 ..at: 6312
+New prediction: 1662 ..at: 6402
+New prediction: 1212 ..at: 6522
+New prediction: 1212 ..at: 6612
+New prediction: 1094 ..at: 6740
+New prediction: 2010 ..at: 6792
+New prediction: 1317 ..at: 6947
+New prediction: 955 ..at: 7002
+New prediction: 810 ..at: 7092
+New prediction: 520 ..at: 7182
+New prediction: 1040 ..at: 7392
+New prediction: 1028 ..at: 7602
+New prediction: 1080 ..at: 7692
+New prediction: 1417 ..at: 7782
+New prediction: 3119 ..at: 7902
+New prediction: 227 ..at: 7992
+Grinding complete!
+learn!
+delta .. point .. progression: 211 19 0.09
+last shot updated idx: 64
+final weight: 8189
+target weight: 9000
+grinding duration: 8011ms
+grinding stopped estimation: 8600mg
+speed at stopping mg/ms: -1.00
+overshoot: -811
+
+datapoints:
+idx: 0  weight: 100 time: 103
+idx: 1  weight: 100 time: 135
+idx: 2  weight: 100 time: 222
+idx: 3  weight: 100 time: 315
+idx: 4  weight: 100 time: 432
+idx: 5  weight: 100 time: 522
+idx: 6  weight: 200 time: 612
+idx: 7  weight: 800 time: 912
+idx: 8  weight: 890 time: 1032
+idx: 9  weight: 1100 time: 1212
+idx: 10  weight: 1700 time: 1632
+idx: 11  weight: 1890 time: 1752
+idx: 12  weight: 2090 time: 1816
+idx: 13  weight: 2290 time: 1962
+idx: 14  weight: 2500 time: 2023
+idx: 15  weight: 2700 time: 2202
+idx: 16  weight: 2900 time: 2382
+idx: 17  weight: 3090 time: 2421
+idx: 18  weight: 3090 time: 2592
+idx: 19  weight: 3400 time: 2622
+idx: 20  weight: 3700 time: 2802
+idx: 21  weight: 4000 time: 2922
+idx: 22  weight: 4300 time: 3102
+idx: 23  weight: 4400 time: 3225
+idx: 24  weight: 4590 time: 3312
+idx: 25  weight: 5090 time: 3526
+idx: 26  weight: 5190 time: 3612
+idx: 27  weight: 5590 time: 3827
+idx: 28  weight: 5900 time: 4037
+idx: 29  weight: 6090 time: 4249
+idx: 30  weight: 6300 time: 4302
+idx: 31  weight: 6900 time: 4512
+idx: 32  weight: 6900 time: 4602
+idx: 33  weight: 7190 time: 4820
+idx: 34  weight: 7300 time: 4902
+idx: 35  weight: 7400 time: 5082
+idx: 36  weight: 7500 time: 5209
+idx: 37  weight: 7590 time: 5292
+idx: 38  weight: 7590 time: 5502
+idx: 39  weight: 7900 time: 5592
+idx: 40  weight: 7800 time: 5712
+idx: 41  weight: 7900 time: 6012
+idx: 42  weight: 8100 time: 6192
+idx: 43  weight: 8000 time: 6312
+idx: 44  weight: 8189 time: 6402
+idx: 45  weight: 8300 time: 6522
+idx: 46  weight: 8300 time: 6612
+idx: 47  weight: 8300 time: 6741
+idx: 48  weight: 8300 time: 6792
+idx: 49  weight: 8390 time: 6948
+idx: 50  weight: 8500 time: 7002
+idx: 51  weight: 8600 time: 7092
+idx: 52  weight: 8600 time: 7182
+idx: 53  weight: 8600 time: 7302
+idx: 54  weight: 8600 time: 7392
+idx: 55  weight: 8600 time: 7512
+idx: 56  weight: 8600 time: 7602
+idx: 57  weight: 8600 time: 7692
+idx: 58  weight: 8600 time: 7782
+idx: 59  weight: 8600 time: 7902
+idx: 60  weight: 8600 time: 7992
+-- END OF GRINDING --
+idx: 61  weight: 8600 time: 8203
+idx: 62  weight: 8189 time: 8412
+idx: 63  weight: 8189 time: 8502
+Old speedmodifier: 1755  New speedmod: 877.50
+Actual delta weight: -411
+endingSpeed: -1.97
+live calc ending Speed: -1.00
+idealOffset: 312
+last offset: 209
+Proper shot! saving values!
+return from learn..!
+Tare
+gbw started!
+New prediction: 10262 ..at: 12
+New prediction: 10262 ..at: 192
+New prediction: 10262 ..at: 342
+New prediction: 10262 ..at: 402
+New prediction: 10262 ..at: 492
+New prediction: 10262 ..at: 612
+New prediction: 10262 ..at: 702
+New prediction: 8551 ..at: 1212
+New prediction: 5688 ..at: 1512
+New prediction: 4400 ..at: 2022
+New prediction: 3422 ..at: 2502
+New prediction: 3300 ..at: 2652
+New prediction: 3270 ..at: 2682
+New prediction: 2691 ..at: 2982
+New prediction: 2503 ..at: 3103
+New prediction: 2758 ..at: 3282
+New prediction: 2509 ..at: 3405
+New prediction: 2192 ..at: 3582
+New prediction: 1970 ..at: 3706
+New prediction: 1620 ..at: 4007
+slow phase..
+New prediction: 1310 ..at: 4092
+New prediction: 1305 ..at: 4184
+New prediction: 1254 ..at: 4272
+New prediction: 1232 ..at: 4400
+New prediction: 1243 ..at: 4572
+New prediction: 1288 ..at: 4722
+New prediction: 1672 ..at: 4782
+New prediction: 1954 ..at: 4932
+New prediction: 3332 ..at: 4992
+New prediction: 4725 ..at: 5352
+New prediction: 6132 ..at: 5382
+New prediction: 7519 ..at: 5477
+New prediction: 10770 ..at: 5592
+New prediction: 2394 ..at: 5684
+New prediction: 2280 ..at: 5772
+New prediction: 8959 ..at: 5899
+New prediction: 3499 ..at: 5982
+New prediction: 1766 ..at: 6072
+New prediction: 1366 ..at: 6282
+New prediction: 1492 ..at: 6372
+New prediction: 1482 ..at: 6492
+New prediction: 1367 ..at: 6582
+New prediction: 808 ..at: 6672
+New prediction: 613 ..at: 6762
+New prediction: 776 ..at: 7011
+New prediction: 699 ..at: 7062
+New prediction: 1262 ..at: 7218
+New prediction: 1130 ..at: 7273
+New prediction: 991 ..at: 7362
+New prediction: 862 ..at: 7482
+New prediction: 707 ..at: 7632
+New prediction: 915 ..at: 7962
+New prediction: 3914 ..at: 8082
+New prediction: 4005 ..at: 8232
+New prediction: 7069 ..at: 8391
+New prediction: 953 ..at: 8562
+New prediction: 1240 ..at: 8682
+New prediction: 1240 ..at: 8772
+New prediction: 1858 ..at: 8862
+New prediction: 600 ..at: 8982
+New prediction: 439 ..at: 9072
+Grinding complete!
+learn!
+delta .. point .. progression: 240 51 0.21
+last shot updated idx: 68
+final weight: 9000
+target weight: 9000
+grinding duration: 9303ms
+grinding stopped estimation: 8890mg
+speed at stopping mg/ms: 0.32
+overshoot: 0
+
+datapoints:
+idx: 0  weight: 0 time: 12
+idx: 1  weight: 0 time: 192
+idx: 2  weight: 0 time: 342
+idx: 3  weight: 0 time: 402
+idx: 4  weight: 0 time: 492
+idx: 5  weight: 0 time: 612
+idx: 6  weight: 0 time: 702
+idx: 7  weight: 1200 time: 1002
+idx: 8  weight: 1500 time: 1212
+idx: 9  weight: 1890 time: 1512
+idx: 10  weight: 2700 time: 2022
+idx: 11  weight: 3500 time: 2502
+idx: 12  weight: 3500 time: 2652
+idx: 13  weight: 3700 time: 2682
+idx: 14  weight: 4190 time: 2982
+idx: 15  weight: 4400 time: 3104
+idx: 16  weight: 4800 time: 3282
+idx: 17  weight: 5000 time: 3406
+idx: 18  weight: 5400 time: 3582
+idx: 19  weight: 5590 time: 3707
+idx: 20  weight: 6190 time: 4008
+idx: 21  weight: 6400 time: 4092
+idx: 22  weight: 6500 time: 4184
+idx: 23  weight: 6590 time: 4272
+idx: 24  weight: 6690 time: 4401
+idx: 25  weight: 6900 time: 4572
+idx: 26  weight: 6900 time: 4722
+idx: 27  weight: 6800 time: 4782
+idx: 28  weight: 6800 time: 4932
+idx: 29  weight: 6800 time: 4992
+idx: 30  weight: 6900 time: 5352
+idx: 31  weight: 6900 time: 5382
+idx: 32  weight: 6900 time: 5478
+idx: 33  weight: 6900 time: 5592
+idx: 34  weight: 6900 time: 5685
+idx: 35  weight: 7000 time: 5772
+idx: 36  weight: 7190 time: 5900
+idx: 37  weight: 7590 time: 5982
+idx: 38  weight: 7590 time: 6072
+idx: 39  weight: 7690 time: 6282
+idx: 40  weight: 7690 time: 6372
+idx: 41  weight: 7690 time: 6492
+idx: 42  weight: 7800 time: 6582
+idx: 43  weight: 8189 time: 6672
+idx: 44  weight: 8189 time: 6762
+idx: 45  weight: 8189 time: 7062
+idx: 46  weight: 8300 time: 7219
+idx: 47  weight: 8300 time: 7273
+idx: 48  weight: 8390 time: 7362
+idx: 49  weight: 8390 time: 7482
+idx: 50  weight: 8500 time: 7633
+idx: 51  weight: 8390 time: 7962
+idx: 52  weight: 8390 time: 8082
+idx: 53  weight: 8390 time: 8232
+idx: 54  weight: 8390 time: 8262
+idx: 55  weight: 8690 time: 8472
+idx: 56  weight: 8690 time: 8562
+idx: 57  weight: 8690 time: 8682
+idx: 58  weight: 8690 time: 8772
+idx: 59  weight: 8690 time: 8862
+idx: 60  weight: 8800 time: 8982
+idx: 61  weight: 8800 time: 9072
+idx: 62  weight: 8890 time: 9252
+-- END OF GRINDING --
+idx: 63  weight: 8890 time: 9492
+idx: 64  weight: 9000 time: 9552
+idx: 65  weight: 9000 time: 9702
+idx: 66  weight: 9000 time: 9762
+idx: 67  weight: 9000 time: 9852
+Old speedmodifier: 877  New speedmod: 438.50
+Actual delta weight: 110
+endingSpeed: 0.53
+live calc ending Speed: 0.32
+idealOffset: 209
+last offset: 209
+Proper shot! saving values!
+return from learn..!
+Client disconnected, reason=534

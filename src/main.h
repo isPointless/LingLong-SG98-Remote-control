@@ -71,7 +71,7 @@ enum Menu3Items{
     RETURN_FROM_GBW,
     GBW_RPM_SET,
     GBW_SLOW_RPM,
-    GBW_SLOW_PHASE,
+    GBW_SLOW_MG,
     GBW_BUTTON_DELAY,
     GBW_SPEEDMOD,
     GBW_OFFSET,

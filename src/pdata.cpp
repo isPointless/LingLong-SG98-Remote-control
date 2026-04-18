@@ -139,9 +139,11 @@ void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 
 
     //update from gbw learn
     if(what == 4) { 
-        if(state == GRINDING_GBW) preferences.putShort(Menu3[4].prefUID, Menu3[4].value);
-        if(state == GRINDING_GBW) preferences.putShort(Menu3[6].prefUID, Menu3[6].value);  
-       // Serial.println("Stored 4");
+        if(state == GRINDING_GBW) preferences.putShort(Menu3[GBW_SPEEDMOD].prefUID, Menu3[GBW_SPEEDMOD].value);
+        if(state == GRINDING_GBW) preferences.putShort(Menu3[GBW_OFFSET].prefUID, Menu3[GBW_OFFSET].value);  
+        #ifdef DEBUG
+            Serial.println("Stored 4");
+        #endif
     }
 
     //update idle state stored

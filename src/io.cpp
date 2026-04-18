@@ -184,7 +184,7 @@ void do_io() {
             if(menu1Selected == Menu1Items::CALIBRATE) { 
                 //DISPLAY press start to continue
                 ledAction(2);
-            } else if (menu1Selected == Menu1Items::LED_BRIGHTNESS) { ledAction(1); } 
+            } else if (menu1Selected == Menu1Items::LED_BRIGHTNESS) { ledAction(100+Menu1[menu1Selected].value); } 
             else { ledAction(0); } 
         }
 
