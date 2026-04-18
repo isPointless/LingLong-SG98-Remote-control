@@ -15,6 +15,14 @@
 
 Preferences preferences; 
 
+namespace {
+bool clamp_menu_entry(menuEntry& entry) {
+    int16_t original = entry.value;
+    if(entry.value < entry.minValue) entry.value = entry.minValue;
+    if(entry.value > entry.maxValue) entry.value = entry.maxValue;
+    return entry.value != original;
+}
+}
 
 void pdata_init() { 
     preferences.begin("settings", false);
@@ -78,6 +86,66 @@ void pdata_read() {  //reads ALL stored settings in flash
     setWeight = storedSetWeight;
 }
 
+void pdata_normalize(bool persist) {
+    bool menu1Changed[NUM_MENU1_ITEMS] = {false};
+    bool menu2Changed[NUM_MENU2_ITEMS] = {false};
+    bool menu3Changed[NUM_MENU3_ITEMS] = {false};
+    bool setRPMChanged = false;
+    bool setWeightChanged = false;
+
+    for(int i = 0; i < NUM_MENU1_ITEMS; i++) {
+        menu1Changed[i] = clamp_menu_entry(Menu1[i]);
+    }
+    for(int i = 0; i < NUM_MENU2_ITEMS; i++) {
+        menu2Changed[i] = clamp_menu_entry(Menu2[i]);
+    }
+    for(int i = 0; i < NUM_MENU3_ITEMS; i++) {
+        menu3Changed[i] = clamp_menu_entry(Menu3[i]);
+    }
+
+    if(Menu1[SETMIN].value > Menu1[SETMAX].value) {
+        Menu1[SETMIN].value = Menu1[SETMAX].value;
+        menu1Changed[SETMIN] = true;
+    }
+
+    if(Menu3[GBW_SLOW_RPM].value > Menu3[GBW_RPM_SET].value) {
+        Menu3[GBW_SLOW_RPM].value = Menu3[GBW_RPM_SET].value;
+        menu3Changed[GBW_SLOW_RPM] = true;
+    }
+
+    if(setRPM > Menu1[SETMAX].value) {
+        setRPM = Menu1[SETMAX].value;
+        setRPMChanged = true;
+    }
+    if(setRPM < Menu1[SETMIN].value) {
+        setRPM = Menu1[SETMIN].value;
+        setRPMChanged = true;
+    }
+
+    if(setWeight > default_max_weight) {
+        setWeight = default_max_weight;
+        setWeightChanged = true;
+    }
+    if(setWeight < default_min_weight) {
+        setWeight = default_min_weight;
+        setWeightChanged = true;
+    }
+
+    if(!persist) return;
+
+    for(int i = 0; i < NUM_MENU1_ITEMS; i++) {
+        if(menu1Changed[i]) preferences.putShort(Menu1[i].prefUID, Menu1[i].value);
+    }
+    for(int i = 0; i < NUM_MENU2_ITEMS; i++) {
+        if(menu2Changed[i]) preferences.putShort(Menu2[i].prefUID, Menu2[i].value);
+    }
+    for(int i = 0; i < NUM_MENU3_ITEMS; i++) {
+        if(menu3Changed[i]) preferences.putShort(Menu3[i].prefUID, Menu3[i].value);
+    }
+    if(setRPMChanged) preferences.putShort("setRPM", setRPM);
+    if(setWeightChanged) preferences.putULong("setWeight", setWeight);
+}
+
 
 void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 = specific setting (derived from state && menuXselected), 3 = setWeight or RPM (based on state), 4 = GbW speedModifier, 5 = lastState; 6=remove last scale, 7 = save scale, 8 = write reset on build id
     if(what == 0) { //write ALL (default) settings *only used when first initalizing*
@@ -95,7 +163,7 @@ void pdata_write(uint8_t what) { // 0 = ALL SETTIGNS , 1 = Calibration array, 2 
         }
 
         preferences.putShort("setRPM", default_setRPM);
-        preferences.putShort("setWeight", default_setWeight);
+        preferences.putULong("setWeight", default_setWeight);
         preferences.putFloat("speedModifier", speedModifier);
 
         preferences.putString("SCALE_NAME", "");

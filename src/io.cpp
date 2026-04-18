@@ -181,6 +181,12 @@ void do_io() {
             Menu1[menu1Selected].value += encoder_change() * Menu1[menu1Selected].scalar;
             if(Menu1[menu1Selected].value > Menu1[menu1Selected].maxValue) Menu1[menu1Selected].value = Menu1[menu1Selected].maxValue;
             if(Menu1[menu1Selected].value < Menu1[menu1Selected].minValue) Menu1[menu1Selected].value = Menu1[menu1Selected].minValue;
+            if(menu1Selected == Menu1Items::SETMAX && Menu1[SETMAX].value < Menu1[SETMIN].value) {
+                Menu1[SETMAX].value = Menu1[SETMIN].value;
+            }
+            if(menu1Selected == Menu1Items::SETMIN && Menu1[SETMIN].value > Menu1[SETMAX].value) {
+                Menu1[SETMIN].value = Menu1[SETMAX].value;
+            }
             if(menu1Selected == Menu1Items::CALIBRATE) { 
                 //DISPLAY press start to continue
                 ledAction(2);
@@ -195,8 +201,8 @@ void do_io() {
                 lastIdle? state = IDLE : state = IDLE_GBW; 
             } else { 
                 enterMenu = false;
-                menu1Selected = EXITMENU;
                 Menu1[menu1Selected].value = OriginalValue;
+                menu1Selected = EXITMENU;
             }
         }
 
@@ -209,7 +215,10 @@ void do_io() {
                 OriginalValue = Menu1[menu1Selected].value;
             } else { 
                 enterMenu = false;
-                if(menu1Selected != Menu1Items::RESET) pdata_write(2);
+                if(menu1Selected != Menu1Items::RESET) {
+                    pdata_write(2);
+                    pdata_normalize();
+                }
                 if(menu1Selected == Menu1Items::RESET && Menu1[menu1Selected].value == 1) { 
                     pdata_write(8);  // Reset the build ID so it resets on boot.
                     #ifdef JMC_DRIVE 
@@ -290,6 +299,16 @@ void do_io() {
             Menu3[menu3Selected].value += encoder_change()* Menu3[menu3Selected].scalar;
             if(Menu3[menu3Selected].value > Menu3[menu3Selected].maxValue) Menu3[menu3Selected].value = Menu3[menu3Selected].maxValue;
             if(Menu3[menu3Selected].value < Menu3[menu3Selected].minValue) Menu3[menu3Selected].value = Menu3[menu3Selected].minValue;
+            if(menu3Selected == Menu3Items::GBW_RPM_SET) {
+                int16_t slowLimit = Menu3[GBW_SLOW_RPM].value;
+                if(slowLimit > Menu1[SETMAX].value) slowLimit = Menu1[SETMAX].value;
+                if(Menu3[GBW_RPM_SET].value > Menu1[SETMAX].value) Menu3[GBW_RPM_SET].value = Menu1[SETMAX].value;
+                if(Menu3[GBW_RPM_SET].value < slowLimit) Menu3[GBW_RPM_SET].value = slowLimit;
+            }
+            if(menu3Selected == Menu3Items::GBW_SLOW_RPM) {
+                if(Menu3[GBW_SLOW_RPM].value > Menu1[SETMAX].value) Menu3[GBW_SLOW_RPM].value = Menu1[SETMAX].value;
+                if(Menu3[GBW_SLOW_RPM].value > Menu3[GBW_RPM_SET].value) Menu3[GBW_SLOW_RPM].value = Menu3[GBW_RPM_SET].value;
+            }
         }
 
         //Button routes
@@ -330,10 +349,10 @@ void do_io() {
                         } 
                         pdata_write(7);
                     }
-                } else 
-                pdata_write(2);
-
-            
+                } else {
+                    pdata_write(2);
+                }
+                pdata_normalize();
             }
         } 
     }

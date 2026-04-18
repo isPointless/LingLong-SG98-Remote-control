@@ -1068,7 +1068,7 @@ void drawMenuValueScreen(int menuNum, int selectedIdx) {
     // Clear screen if needed
     static int prevSelectedIdx = -1, prevMenuNum = -1;
     static int16_t prevValue = 0xFFFF;
-    int thisScreenId = menuNum * selectedIdx * 32;
+    int thisScreenId = (menuNum << 8) | selectedIdx;
     
     const menuEntry* menu = getMenuByNum(menuNum);
     const menuEntry& item = menu[selectedIdx];

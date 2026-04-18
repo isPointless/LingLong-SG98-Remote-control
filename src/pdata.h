@@ -7,5 +7,6 @@
 void pdata_init();
 void pdata_write(uint8_t what);
 void pdata_read();
+void pdata_normalize(bool persist = true);
 
 #endif

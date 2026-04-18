@@ -112,7 +112,7 @@ bool do_comm() { // can be called continously and will update all values. Return
   static int16_t motor_lastSetRPM = -1;
 
   //Disconnect flow
-  if(lastCommReceived + 2*COMM_DELAY_IDLE < millis() && lastCommReceived > 0) { 
+  if(lastCommReceived + 4*COMM_DELAY_IDLE < millis() && lastCommReceived > 0) { 
     #ifndef DEBUG
       error = 2;
     #endif
@@ -130,7 +130,7 @@ bool do_comm() { // can be called continously and will update all values. Return
   }
 
 //Cannot establish connection 
-  if(lastCommReceived == 0 && commStatus == COMM_DISCONNECTED && millis() > 10000) { 
+  if(lastCommReceived == 0 && commStatus == COMM_DISCONNECTED && millis() > DISCONNECTED_AFTER) { 
     #ifndef DEBUG
       error = 1;
     #endif

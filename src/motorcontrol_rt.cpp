@@ -80,7 +80,7 @@ bool do_comm() { // can be called continously and will update all values. Return
     reg_201 = -1;
   }
 
-  if(lastCommReceived == 0 && commStatus == COMM_DISCONNECTED && millis() > 10000) { 
+  if(lastCommReceived == 0 && commStatus == COMM_DISCONNECTED && millis() > DISCONNECTED_AFTER) { 
     #ifndef DEBUG
       error = 1;
     #endif
