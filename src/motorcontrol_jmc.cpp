@@ -352,7 +352,7 @@ if(motor_setRPM == 0) {
     }
 
     // SET ONCE >> 
-    if(reg_0103 != Menu1[SETMOTORRAMP].value && state == IDLE || state == IDLE_GBW) { 
+    if(reg_0103 != Menu1[SETMOTORRAMP].value && (state == IDLE || state == IDLE_GBW)) { 
       if(writeConfirm(0x2103, Menu1[SETMOTORRAMP].value)) { // Set rigidity LVL (restart required)
         reg_0103 = Menu1[SETMOTORRAMP].value;
         error = 107; // reboot drive error

@@ -152,7 +152,7 @@ void setup() {
     xTaskCreatePinnedToCore(
     scaleTask,         // Task function
     "ScaleTask",       // Name
-    4096,              // Stack size (adjust as needed)
+    8192,              // Stack size (adjust as needed)
     NULL,              // Parameter
     1,                 // Priority
     NULL,              // Task handle
